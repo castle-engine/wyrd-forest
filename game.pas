@@ -71,7 +71,7 @@ begin
   Divisions := 300;
   GridSize := 0.57;
   Octaves := 6.94;
-  Smoothness := 1.9;
+  Smoothness := 1.63; //1.9;
   Amplitude := 7.85;
   Frequency := 0.04;
   Heterogeneous := 0.64;

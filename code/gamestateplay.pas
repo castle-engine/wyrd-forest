@@ -13,12 +13,10 @@
   ----------------------------------------------------------------------------
 }
 
-{ Game initialization and logic. }
-unit Game;
+{ TStatePlay, responsible for playing the game. }
+unit GameStatePlay;
 
 interface
-
-implementation
 
 uses SysUtils, Classes,
   CastleWindowTouch, CastleWindow, CastleScene, CastleControls, CastleLog,
@@ -30,8 +28,6 @@ uses SysUtils, Classes,
 
 var
   SceneManager: TCastleSceneManager;
-
-{ TTerrain ------------------------------------------------------------------- }
 
 type
   TTerrain = class(TComponent)
@@ -58,17 +54,41 @@ type
     procedure UpdateScene(Sender: TObject);
     procedure UpdateShader(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; const InitialDivisions: Cardinal); reintroduce;
     procedure AddSlidersToMenu(OnScreenMenu: TCastleOnScreenMenu);
     procedure CreateScene;
     property Scene: TCastleScene read FScene;
   end;
 
-constructor TTerrain.Create(AOwner: TComponent);
-begin
-  inherited;
+  TStatePlay = class(TUIState)
+  strict private
+    Status: TCastleLabel;
+    OnScreenMenu: TCastleOnScreenMenu;
+    Terrain: TTerrain;
+    Notifications: TCastleNotifications;
+  public
+    InitialDivisions: Cardinal;
+    procedure Start; override;
+    procedure Update(const SecondsPassed: Single;
+      var HandleInput: boolean); override;
+    function Press(const Event: TInputPressRelease): boolean; override;
+  end;
 
-  Divisions := 300;
+var
+  StatePlay: TStatePlay;
+
+implementation
+
+uses Math,
+  GameStateMainMenu;
+
+{ TTerrain ------------------------------------------------------------------- }
+
+constructor TTerrain.Create(AOwner: TComponent; const InitialDivisions: Cardinal);
+begin
+  inherited Create(AOwner);
+
+  Divisions := InitialDivisions;
   GridSize := 0.57;
   Octaves := 6.94;
   Smoothness := 1.63; //1.9;
@@ -281,32 +301,14 @@ end;
 
 { TStatePlay ----------------------------------------------------------------- }
 
-type
-  TStatePlay = class(TUIState)
-  strict private
-    Status: TCastleLabel;
-    OnScreenMenu: TCastleOnScreenMenu;
-    Terrain: TTerrain;
-    Notifications: TCastleNotifications;
-  public
-    procedure Start; override;
-    procedure Update(const SecondsPassed: Single;
-      var HandleInput: boolean); override;
-    function Press(const Event: TInputPressRelease): boolean; override;
-  end;
-
 procedure TStatePlay.Start;
 var
   EnvironmentScene: TCastleScene;
 begin
   inherited;
 
-  { Show a label with FPS }
-  Status := TCastleLabel.Create(FreeAtStop);
-  Status.Anchor(vpTop, -10);
-  Status.Anchor(hpRight, -10);
-  Status.Color := Yellow; // you could use "Vector4(1, 1, 0, 1)" instead of Yellow
-  InsertFront(Status);
+  SceneManager := TCastleSceneManager.Create(FreeAtStop);
+  InsertBack(SceneManager);
 
   SceneManager.NavigationType := ntWalk;
   SceneManager.WalkCamera.PreferredHeight := 2;
@@ -337,7 +339,14 @@ begin
   Notifications.Color := Yellow;
   InsertFront(Notifications);
 
-  Terrain := TTerrain.Create(FreeAtStop);
+  { Show a label with FPS }
+  Status := TCastleLabel.Create(FreeAtStop);
+  Status.Anchor(vpTop, -10);
+  Status.Anchor(hpRight, -10);
+  Status.Color := Yellow; // you could use "Vector4(1, 1, 0, 1)" instead of Yellow
+  InsertFront(Status);
+
+  Terrain := TTerrain.Create(FreeAtStop, InitialDivisions);
   Terrain.CreateScene;
   Terrain.AddSlidersToMenu(OnScreenMenu);
 end;
@@ -350,7 +359,8 @@ begin
     '[F4] Toggle mouse look' +NL+
     '[F5] Screenshot' +NL+
     '[F6] Save terrain to X3D file' +NL+
-    '[F10] Debug menu',
+    '[F10] Toggle controls to tweak display' +NL+
+    '[Escape] Back to main menu',
     [Container.Fps.RealTime,
      SceneManager.WalkCamera.MoveSpeed]);
 end;
@@ -378,46 +388,8 @@ begin
   end;
   if Event.IsKey(K_F10) then
     OnScreenMenu.Exists := not OnScreenMenu.Exists;
+  if Event.IsKey(K_Escape) then
+    TUIState.Current := StateMainMenu;
 end;
 
-{ application routines ------------------------------------------------------- }
-
-var
-  Window: TCastleWindowTouch;
-  StatePlay: TStatePlay;
-
-{ One-time initialization of resources. }
-procedure ApplicationInitialize;
-begin
-  { For a scalable UI (adjusts to any window size in a smart way), use UIScaling }
-  Window.Container.UIReferenceWidth := 1024;
-  Window.Container.UIReferenceHeight := 768;
-  Window.Container.UIScaling := usEncloseReferenceSize;
-
-  { use the default full-screen Window.SceneManager for this simple game }
-  SceneManager := Window.SceneManager;
-
-  StatePlay := TStatePlay.Create(Application);
-  TUIState.Current := StatePlay;
-end;
-
-function MyGetApplicationName: string;
-begin
-  Result := 'wyrd-forest';
-end;
-
-initialization
-  { This sets SysUtils.ApplicationName.
-    It is useful to make sure it is correct (as early as possible)
-    as our log routines use it. }
-  OnGetApplicationName := @MyGetApplicationName;
-
-  InitializeLog;
-
-  { initialize Application callbacks }
-  Application.OnInitialize := @ApplicationInitialize;
-
-  { create Window and initialize Window callbacks }
-  Window := TCastleWindowTouch.Create(Application);
-  Application.MainWindow := Window;
 end.

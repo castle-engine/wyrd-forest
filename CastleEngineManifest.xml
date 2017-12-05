@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project name="wyrd-forest"
-  standalone_source="wyrd_forest_standalone.lpr"
+  standalone_source="code/wyrd_forest_standalone.lpr"
   game_units="Game"
   qualified_name="io.castleengine.wyrd.forest"
 >
+  <compiler_options>
+    <search_paths>
+      <path value="code/" />
+    </search_paths>
+  </compiler_options>
 </project>

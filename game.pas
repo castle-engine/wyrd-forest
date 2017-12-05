@@ -24,8 +24,9 @@ uses SysUtils, Classes,
   CastleWindowTouch, CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
   CastleUIControls, CastleTerrain, CastleUIState, CastleSceneManager,
-  CastleCameras, X3DNodes, CastleTransform, CastleVectors, CastleTriangles,
-  CastleOnScreenMenu, CastleUtils, CastleBoxes;
+  CastleCameras, X3DNodes, X3DFields, CastleRendererBaseTypes,
+  CastleTransform, CastleVectors, CastleTriangles,
+  CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications;
 
 var
   SceneManager: TCastleSceneManager;
@@ -35,7 +36,11 @@ var
 type
   TTerrain = class(TComponent)
   strict private
-    Scene: TCastleScene;
+    FScene: TCastleScene;
+    TextureHeights: array [0..3] of Single;
+    TextureHeightsFields: array [0..3] of TSFFloat;
+    UVScale: array [1..3] of Single;
+    UVScaleFields: array [1..3] of TSFFloat;
 
     { Configure terrain noise. }
     Divisions: Cardinal;
@@ -46,10 +51,12 @@ type
     Frequency: Single;
     Heterogeneous: Single;
     procedure UpdateScene(Sender: TObject);
+    procedure UpdateShader(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     procedure AddSlidersToMenu(OnScreenMenu: TCastleOnScreenMenu);
     procedure CreateScene;
+    property Scene: TCastleScene read FScene;
   end;
 
 constructor TTerrain.Create(AOwner: TComponent);
@@ -63,11 +70,19 @@ begin
   Amplitude := 7.85;
   Frequency := 0.04;
   Heterogeneous := 0.64;
+
+  TextureHeights[0] := 0.42;
+  TextureHeights[1] := 1.94;
+  TextureHeights[2] := 5;
+  TextureHeights[3] := 10;
+  UVScale[1] := 0.11;
+  UVScale[2] := 0.26;
+  UVScale[3] := 0.36;
 end;
 
 procedure TTerrain.CreateScene;
 begin
-  Scene := TCastleScene.Create(Self);
+  FScene := TCastleScene.Create(Self);
   { no need for ssDynamicCollisions -- scene is static }
   Scene.Spatial := [ssRendering, ssStaticCollisions];
   { no need for ProcessEvents, as this scene is static }
@@ -80,29 +95,100 @@ end;
 
 procedure TTerrain.AddSlidersToMenu(OnScreenMenu: TCastleOnScreenMenu);
 
-  procedure IntSlider(const Name: string; const ValuePointer: PInteger; const Min, Max: Integer);
+  procedure IntSlider(const Name: string; const ValuePointer: PInteger; const Min, Max: Integer;
+    const OnChange: TNotifyEvent);
   begin
     OnScreenMenu.Add(Name, TCastleIntegerSlider.Create(Self,
-      ValuePointer, Min, Max, @UpdateScene));
+      ValuePointer, Min, Max, OnChange));
   end;
 
-  procedure FloatSlider(const Name: string; const ValuePointer: PSingle; const Min, Max: Single);
+  procedure FloatSlider(const Name: string; const ValuePointer: PSingle; const Min, Max: Single;
+    const OnChange: TNotifyEvent);
   begin
     OnScreenMenu.Add(Name, TCastleFloatSlider.Create(Self,
-      ValuePointer, Min, Max, @UpdateScene));
+      ValuePointer, Min, Max, OnChange));
   end;
 
+var
+  I: Integer;
 begin
-  IntSlider('Divisions', @Divisions, 10, 200);
-  FloatSlider('Grid Size', @GridSize, 0.1, 2);
-  FloatSlider('Octaves', @Octaves, 0, 20);
-  FloatSlider('Smoothness', @Smoothness, 1, 10);
-  FloatSlider('Amplitude', @Amplitude, 0.1, 10);
-  FloatSlider('Frequency', @Frequency, 0.001, 0.1);
-  FloatSlider('Heterogeneous', @Heterogeneous, 0, 2);
+  IntSlider('Divisions', @Divisions, 10, 200, @UpdateScene);
+  FloatSlider('Grid Size', @GridSize, 0.1, 2, @UpdateScene);
+  FloatSlider('Octaves', @Octaves, 0, 20, @UpdateScene);
+  FloatSlider('Smoothness', @Smoothness, 1, 10, @UpdateScene);
+  FloatSlider('Amplitude', @Amplitude, 0.1, 10, @UpdateScene);
+  FloatSlider('Frequency', @Frequency, 0.001, 0.1, @UpdateScene);
+  FloatSlider('Heterogeneous', @Heterogeneous, 0, 2, @UpdateScene);
+
+  for I := Low(TextureHeights) to High(TextureHeights) do
+    FloatSlider('Texture Height ' + IntToStr(I), @TextureHeights[I], 0, 10, @UpdateShader);
+  for I := Low(UVScale) to High(UVScale) do
+    FloatSlider('UV Scale ' + IntToStr(I), @UVScale[I], 0.01, 0.5, @UpdateShader);
+end;
+
+procedure TTerrain.UpdateShader(Sender: TObject);
+var
+  I: Integer;
+begin
+  { We could just call UpdateScene now, but that would be very inefficient.
+    Instead we can pass new value to the existing shader. }
+  for I := Low(TextureHeights) to High(TextureHeights) do
+    TextureHeightsFields[I].Send(TextureHeights[I]);
+  for I := Low(UVScale) to High(UVScale) do
+    UVScaleFields[I].Send(UVScale[I]);
 end;
 
 procedure TTerrain.UpdateScene(Sender: TObject);
+
+  procedure AdjustAppearance(Appearance: TAppearanceNode);
+  var
+    Effect: TEffectNode;
+    VertexPart, FragmentPart: TEffectPartNode;
+    Tex1, Tex2, Tex3: TImageTextureNode;
+    I: Integer;
+  begin
+    { initialize Effect node, for a shader effect }
+    Effect := TEffectNode.Create;
+    Effect.Language := slGLSL;
+    Appearance.SetEffects([Effect]);
+
+    { pass textures to shader effect }
+    Tex1 := TImageTextureNode.Create;
+    Tex1.SetUrl([ApplicationData('textures/moss_ground_d.jpg')]);
+    Tex2 := TImageTextureNode.Create;
+    Tex2.SetUrl([ApplicationData('textures/ground_mud2_d.jpg')]);
+    Tex3 := TImageTextureNode.Create;
+    Tex3.SetUrl([ApplicationData('textures/mntn_white_d.jpg')]);
+
+    Effect.AddCustomField(TSFNode.Create(Effect, false, 'tex_1', [], Tex1));
+    Effect.AddCustomField(TSFNode.Create(Effect, false, 'tex_2', [], Tex2));
+    Effect.AddCustomField(TSFNode.Create(Effect, false, 'tex_3', [], Tex3));
+
+    { pass uniforms to shader effect }
+    for I := Low(TextureHeights) to High(TextureHeights) do
+    begin
+      TextureHeightsFields[I] := TSFFloat.Create(
+        Effect, true, 'h' + IntToStr(I), TextureHeights[I]);
+      Effect.AddCustomField(TextureHeightsFields[I]);
+    end;
+    for I := Low(UVScale) to High(UVScale) do
+    begin
+      UVScaleFields[I] := TSFFloat.Create(
+        Effect, true, 'uv_scale_' + IntToStr(I), UVScale[I]);
+      Effect.AddCustomField(UVScaleFields[I]);
+    end;
+
+    { initialize 2 EffectPart nodes (one for vertex shader, one for fragment shader) }
+    FragmentPart := TEffectPartNode.Create;
+    FragmentPart.ShaderType := stFragment;
+    FragmentPart.SetUrl([ApplicationData('shaders/terrain.fs')]);
+
+    VertexPart := TEffectPartNode.Create;
+    VertexPart.ShaderType := stVertex;
+    VertexPart.SetUrl([ApplicationData('shaders/terrain.vs')]);
+
+    Effect.SetParts([FragmentPart, VertexPart]);
+  end;
 
   { fix SceneManager camera position to stand on ground }
   procedure FixCamera;
@@ -111,13 +197,20 @@ procedure TTerrain.UpdateScene(Sender: TObject);
     P: TVector3;
   begin
     P := SceneManager.WalkCamera.Position;
-    RayCollision := SceneManager.Items.WorldRay(
-      Vector3(P.X, 1000 * 1000, P.Z), Vector3(0, -1, 0));
+    P.Y := 1000 * 1000;
+    RayCollision := SceneManager.Items.WorldRay(P, Vector3(0, -1, 0));
     try
       if RayCollision <> nil then
+      begin
         P.Y := RayCollision[0].Point.Y + 2;
+        SceneManager.WalkCamera.Position := P;
+      end else
+      begin
+        WritelnLog('Camera stands outside of terrain, fixing');
+        SceneManager.WalkCamera.Position := SceneManager.Items.BoundingBox.Center;
+        FixCamera;
+      end;
     finally FreeAndNil(RayCollision) end;
-    SceneManager.WalkCamera.Position := P;
   end;
 
 var
@@ -153,6 +246,8 @@ begin
 
     Shape := TerrainNoise.CreateNode(Divisions, Size,
       Vector2(0, Size), Vector2(0, Size), nil);
+
+    AdjustAppearance(Shape.Appearance);
   finally FreeAndNil(TerrainNoise) end;
 
   Root := TX3DRootNode.Create;
@@ -177,6 +272,7 @@ type
     Status: TCastleLabel;
     OnScreenMenu: TCastleOnScreenMenu;
     Terrain: TTerrain;
+    Notifications: TCastleNotifications;
   public
     procedure Start; override;
     procedure Update(const SecondsPassed: Single;
@@ -206,9 +302,17 @@ begin
   SceneManager.WalkCamera.MoveSpeed := 10;
 
   OnScreenMenu := TCastleOnScreenMenu.Create(FreeAtStop);
+  //OnScreenMenu.Exists := false;
   OnScreenMenu.Anchor(hpRight, -10);
   OnScreenMenu.Anchor(vpBottom, 10);
   InsertFront(OnScreenMenu);
+
+  Notifications := TCastleNotifications.Create(Owner);
+  Notifications.Anchor(hpMiddle);
+  Notifications.Anchor(vpBottom, 10);
+  Notifications.TextAlignment := hpMiddle;
+  Notifications.Color := Yellow;
+  InsertFront(Notifications);
 
   Terrain := TTerrain.Create(FreeAtStop);
   Terrain.CreateScene;
@@ -220,18 +324,37 @@ begin
   Status.Caption := Format(
     'FPS: %f' +NL+
     'Move speed (change by [-] [+]): %f' + NL +
-    'Toggle mouse look with [F4]',
+    '[F4] Toggle mouse look' +NL+
+    '[F5] Screenshot' +NL+
+    '[F6] Save terrain to X3D file' +NL+
+    '[F10] Debug menu',
     [Container.Fps.RealTime,
      SceneManager.WalkCamera.MoveSpeed]);
 end;
 
 function TStatePlay.Press(const Event: TInputPressRelease): boolean;
+var
+  S: string;
 begin
   Result := inherited;
   if Result then Exit;
 
   if Event.IsKey(K_F4) then
     SceneManager.WalkCamera.MouseLook := not SceneManager.WalkCamera.MouseLook;
+  if Event.IsKey(K_F5) then
+  begin
+    S := FileNameAutoInc('wyrd_forest_screen_%d.png');
+    Container.SaveScreen(S);
+    Notifications.Show('Saved screen to ' + S);
+  end;
+  if Event.IsKey(K_F6) then
+  begin
+    S := FileNameAutoInc(ApplicationData('data/terrain_%d.x3dv'));
+    Terrain.Scene.Save(S);
+    Notifications.Show('Saved terrain 3D model to ' + S);
+  end;
+  if Event.IsKey(K_F10) then
+    OnScreenMenu.Exists := not OnScreenMenu.Exists;
 end;
 
 { application routines ------------------------------------------------------- }

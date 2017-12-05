@@ -88,7 +88,6 @@ begin
   { no need for ProcessEvents, as this scene is static }
   // Scene.ProcessEvents := true;
   SceneManager.Items.Add(Scene);
-  SceneManager.MainScene := Scene;
 
   UpdateScene(nil);
 end;
@@ -281,6 +280,8 @@ type
   end;
 
 procedure TStatePlay.Start;
+var
+  EnvironmentScene: TCastleScene;
 begin
   inherited;
 
@@ -300,6 +301,11 @@ begin
     Vector3(0, 1, 0)
   );
   SceneManager.WalkCamera.MoveSpeed := 10;
+
+  EnvironmentScene := TCastleScene.Create(FreeAtStop);
+  EnvironmentScene.Load(ApplicationData('environment.x3dv'));
+  SceneManager.Items.Add(EnvironmentScene);
+  SceneManager.MainScene := EnvironmentScene;
 
   OnScreenMenu := TCastleOnScreenMenu.Create(FreeAtStop);
   //OnScreenMenu.Exists := false;
@@ -349,7 +355,7 @@ begin
   end;
   if Event.IsKey(K_F6) then
   begin
-    S := FileNameAutoInc(ApplicationData('data/terrain_%d.x3dv'));
+    S := FileNameAutoInc('terrain_%d.x3dv');
     Terrain.Scene.Save(S);
     Notifications.Show('Saved terrain 3D model to ' + S);
   end;

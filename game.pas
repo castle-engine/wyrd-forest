@@ -59,7 +59,7 @@ begin
   Divisions := 150;
   GridSize := 0.57;
   Octaves := 6.94;
-  Smoothness := 2;
+  Smoothness := 1.9;
   Amplitude := 7.85;
   Frequency := 0.04;
   Heterogeneous := 0.64;
@@ -68,9 +68,8 @@ end;
 procedure TTerrain.CreateScene;
 begin
   Scene := TCastleScene.Create(Self);
-  { no need for ssRendering in Spatial -- this scene has only 1 shape,
-    no need for ssDynamicCollisions -- scene is static }
-  Scene.Spatial := [ssStaticCollisions];
+  { no need for ssDynamicCollisions -- scene is static }
+  Scene.Spatial := [ssRendering, ssStaticCollisions];
   { no need for ProcessEvents, as this scene is static }
   // Scene.ProcessEvents := true;
   SceneManager.Items.Add(Scene);
@@ -143,8 +142,12 @@ begin
       behave orthogonally, and neither of them affects the "true" shape
       of the underlying terrain (represented by TerrainNoise).
 
-      - grid size allows you to see more detail, closer, but does not affect FPS.
-      - distance allows you to see further, and affects FPS.
+      - grid size allows you to see more detail, but does not affect FPS.
+      - distance does not increase the details visible close to you,
+        but affects FPS.
+
+      Both of them allow you to see further, but in different ways
+      (one of them sacrifices details, the other one increases mesh density).
     }
     Size := Divisions * GridSize;
 

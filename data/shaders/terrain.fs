@@ -12,19 +12,25 @@ uniform float uv_scale_1;
 uniform float uv_scale_2;
 uniform float uv_scale_3;
 
+uniform float normal_dark;
+uniform float normal_darkening;
+uniform float texture_mix;
+
 uniform float h0; // below is tex_1
 uniform float h1; // below is tex_2 mixed with tex_1
 uniform float h2; // below is tex_2
 uniform float h3; // below is tex_3 mixed with tex_2
                   // above is tex_3
 
-varying vec3 position;
+varying vec3 terrain_position;
+varying vec3 terrain_normal;
 
 void PLUG_texture_apply(inout vec4 fragment_color, const in vec3 normal)
 {
   vec4 tex;
-  float h = position.y;
-  vec2 uv = position.xz;
+  float h = terrain_position.y;
+  vec2 uv = terrain_position.xz;
+  float normal_slope = normalize(terrain_normal).y;
 
   /*
   if (h <= h0) {
@@ -75,5 +81,7 @@ void PLUG_texture_apply(inout vec4 fragment_color, const in vec3 normal)
       texture2D(tex_3, uv * uv_scale_3), mixfactor);
   }
 
-  fragment_color.rgb = mix(fragment_color.rgb, tex.rgb, 0.7);
+  fragment_color.rgb = mix(fragment_color.rgb, tex.rgb, texture_mix);
+
+  fragment_color.rgb *= mix(normal_darkening, 1.0, smoothstep(normal_dark, 1.0, normal_slope));
 }

@@ -2,8 +2,8 @@
 PROFILE Interchange
 
 Fog {
-  color 0.5 0.5 0.5
-  visibilityRange 50
+  color 0.75 0.75 0.75
+  visibilityRange 150
   fogType "EXPONENTIAL"
 }
 

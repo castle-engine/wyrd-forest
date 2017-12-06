@@ -24,7 +24,7 @@ program wyrd_forest_standalone;
   Comment this out if you don't compile using our "castle-engine" build tool. }
 {$ifdef MSWINDOWS} {$R automatic-windows-resources.res} {$endif MSWINDOWS}
 
-uses CastleLog, CastleWindow, Game;
+uses CastleLog, CastleWindow, GameInitialize;
 
 begin
   Application.Version := '';

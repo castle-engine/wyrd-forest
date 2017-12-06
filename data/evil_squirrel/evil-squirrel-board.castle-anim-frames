@@ -120,7 +120,7 @@
 </X3D>
 		</frame>
 	</animation>
-	<animation name="stand_up">
+	<animation name="spawn">
 		<frame time="0.000000" bounding_box_center="-0.014430 -2.970509 0.955376" bounding_box_size="1.869274 0.165386 1.899559">
 
 

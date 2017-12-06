@@ -21,13 +21,12 @@ interface
 implementation
 
 uses SysUtils, Classes,
-  CastleWindowTouch, CastleWindow, CastleScene, CastleControls, CastleLog,
+  CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
-  CastleUIControls, CastleTerrain, CastleUIState, CastleSceneManager,
-  CastleCameras, X3DNodes, X3DFields, CastleRendererBaseTypes,
-  CastleTransform, CastleVectors, CastleTriangles,
+  CastleUIControls, CastleUIState, CastleSceneManager,
+  CastleTransform, CastleVectors, CastleImages,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications,
-  GameStatePlay, GameStateMainMenu;
+  GameStatePlay, GameStateLoading, GameStateMainMenu;
 
 { application routines ------------------------------------------------------- }
 
@@ -42,9 +41,15 @@ begin
   Window.Container.UIReferenceHeight := 768;
   Window.Container.UIScaling := usEncloseReferenceSize;
 
+  { customize TCastleLabel with TCastleLabel.Frame=true look }
+  Theme.Images[tiLabel] := LoadImage(ApplicationData('transparent_pixel.png'));
+  Theme.OwnsImages[tiLabel] := true;
+  Theme.Corners[tiLabel] := Vector4Integer(0, 0, 0, 0);
+
   { create TUIState instances }
   StateMainMenu := TStateMainMenu.Create(Application);
   StatePlay := TStatePlay.Create(Application);
+  StateLoading := TStateLoading.Create(Application);
 
   { set current state }
   TUIState.Current := StateMainMenu;

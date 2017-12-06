@@ -8,7 +8,7 @@ Features:
 
 * Terrain editor (visually edit size and all generation parameters - octaves, smoothness, heterogeneous...)
 * Terrain shader with 3 blended texture layers and darkened slopes (parameters are also editable during the game)
-* Simple walking in FPS mode (AWSD keys, or drag with mouse, press F4 to toggle mouse look)
+* Simple walking in FPS mode (you can use AWSD keys, array keys, drag with mouse, press F4 to toggle mouse look, C to crouch, Space to jump, Shift to run)
 * Ability to save generated terrain as 3D model in X3D format
 
 ## Compilation

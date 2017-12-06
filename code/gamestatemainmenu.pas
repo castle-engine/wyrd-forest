@@ -24,7 +24,6 @@ uses Classes,
 type
   TStateMainMenu = class(TUIState)
   strict private
-    SimpleBackground: TCastleSimpleBackground;
     ImageBackground: TCastleImageControl;
     EditGridCount: TCastleEdit;
     LabelGridCount: TCastleLabel;
@@ -42,7 +41,7 @@ implementation
 
 uses SysUtils,
   CastleColors, CastleUIControls, CastleFilesUtils, CastleUtils,
-  GameStatePlay;
+  GameStatePlay, GameStateLoading;
 
 { TStateMainMenu ------------------------------------------------------------- }
 
@@ -50,13 +49,14 @@ procedure TStateMainMenu.Start;
 begin
   inherited;
 
-  SimpleBackground := TCastleSimpleBackground.Create(FreeAtStop);
-  InsertFront(SimpleBackground);
+  // not needed, ImageBackground covers whole screen
+  // SimpleBackground := TCastleSimpleBackground.Create(FreeAtStop);
+  // InsertFront(SimpleBackground);
 
   ImageBackground := TCastleImageControl.Create(FreeAtStop);
   ImageBackground.Stretch := true;
   ImageBackground.ProportionalScaling := psEnclose;
-  ImageBackground.URL := ApplicationData('textures/island_sand2_d.jpg');
+  ImageBackground.URL := ApplicationData('loading.png');
   ImageBackground.FullSize := true;
   ImageBackground.Anchor(hpMiddle);
   ImageBackground.Anchor(vpMiddle);
@@ -76,7 +76,9 @@ begin
   LabelGridCount.MaxWidth := StateContainer.UnscaledWidth - 20;
   LabelGridCount.Anchor(hpLeft, 10);
   LabelGridCount.Anchor(vpBottom, 10 + EditGridCount.CalculatedHeight + 10);
-  LabelGridCount.Color := Black;
+  LabelGridCount.Color := White;
+  LabelGridCount.Frame := true;
+  LabelGridCount.Padding := 10;
   LabelGridCount.Caption := 'Initial Grid Count.' + NL +
     'The terrain mesh size is (Grid Count) * (Grid Count).' + NL +
     '- 50-100 is good for experimenting with terrain noise parameters.' + NL +
@@ -98,7 +100,8 @@ end;
 procedure TStateMainMenu.PlayClick(Sender: TObject);
 begin
   StatePlay.InitialGridCount := StrToInt(EditGridCount.Text);
-  TUIState.Current := StatePlay;
+  // TUIState.Current := StatePlay;
+  TUIState.Current := StateLoading; // StateLoading will switch to StatePlay
 end;
 
 function TStateMainMenu.Press(const Event: TInputPressRelease): boolean;

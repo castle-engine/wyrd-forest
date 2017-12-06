@@ -188,11 +188,11 @@ procedure TTerrain.UpdateScene(Sender: TObject);
 
     { pass textures to shader effect }
     Tex1 := TImageTextureNode.Create;
-    Tex1.SetUrl([ApplicationData('textures/island_sand2_d.jpg')]);
+    Tex1.SetUrl([ApplicationData('terrain/textures/island_sand2_d.jpg')]);
     Tex2 := TImageTextureNode.Create;
-    Tex2.SetUrl([ApplicationData('textures/ground_mud2_d.jpg')]);
+    Tex2.SetUrl([ApplicationData('terrain/textures/ground_mud2_d.jpg')]);
     Tex3 := TImageTextureNode.Create;
-    Tex3.SetUrl([ApplicationData('textures/mntn_white_d.jpg')]);
+    Tex3.SetUrl([ApplicationData('terrain/textures/mntn_white_d.jpg')]);
 
     Effect.AddCustomField(TSFNode.Create(Effect, false, 'tex_1', [], Tex1));
     Effect.AddCustomField(TSFNode.Create(Effect, false, 'tex_2', [], Tex2));
@@ -218,11 +218,11 @@ procedure TTerrain.UpdateScene(Sender: TObject);
     { initialize 2 EffectPart nodes (one for vertex shader, one for fragment shader) }
     FragmentPart := TEffectPartNode.Create;
     FragmentPart.ShaderType := stFragment;
-    FragmentPart.SetUrl([ApplicationData('shaders/terrain.fs')]);
+    FragmentPart.SetUrl([ApplicationData('terrain/shaders/terrain.fs')]);
 
     VertexPart := TEffectPartNode.Create;
     VertexPart.ShaderType := stVertex;
-    VertexPart.SetUrl([ApplicationData('shaders/terrain.vs')]);
+    VertexPart.SetUrl([ApplicationData('terrain/shaders/terrain.vs')]);
 
     Effect.SetParts([FragmentPart, VertexPart]);
   end;
@@ -316,7 +316,7 @@ begin
   SceneManager.WalkCamera.MoveSpeed := 10;
 
   EnvironmentScene := TCastleScene.Create(FreeAtStop);
-  EnvironmentScene.Load(ApplicationData('environment.x3dv'));
+  EnvironmentScene.Load(ApplicationData('environment/environment.x3dv'));
   EnvironmentScene.ProcessEvents := true;
   SceneManager.Items.Add(EnvironmentScene);
   SceneManager.MainScene := EnvironmentScene;
@@ -346,7 +346,11 @@ begin
   Terrain.AddSlidersToMenu(OnScreenMenu);
 
   SceneManager.WalkCamera.SetView(
-    // initially, stand in the middle
+    { Initially, stand in the middle.
+      This is not really necessary -- the CreateScene already called UpdateScene
+      that already called FixCamera, and moved it to the middle (with message
+      "Camera stands outside of terrain, fixing" in log).
+      But doing it explicitly feels cleaner. }
     SceneManager.Items.BoundingBox.Center,
     // look in the direction that shrinks / grows when you change GridCount
     Vector3(1, 0, 1),

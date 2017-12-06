@@ -56,7 +56,7 @@ begin
   ImageBackground := TCastleImageControl.Create(FreeAtStop);
   ImageBackground.Stretch := true;
   ImageBackground.ProportionalScaling := psEnclose;
-  ImageBackground.URL := ApplicationData('loading.png');
+  ImageBackground.URL := ApplicationData('gui/loading.png');
   ImageBackground.FullSize := true;
   ImageBackground.Anchor(hpMiddle);
   ImageBackground.Anchor(vpMiddle);

@@ -42,7 +42,7 @@ begin
   Window.Container.UIScaling := usEncloseReferenceSize;
 
   { customize TCastleLabel with TCastleLabel.Frame=true look }
-  Theme.Images[tiLabel] := LoadImage(ApplicationData('transparent_pixel.png'));
+  Theme.Images[tiLabel] := LoadImage(ApplicationData('gui/transparent_pixel.png'));
   Theme.OwnsImages[tiLabel] := true;
   Theme.Corners[tiLabel] := Vector4Integer(0, 0, 0, 0);
 

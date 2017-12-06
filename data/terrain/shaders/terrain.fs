@@ -64,7 +64,7 @@ void PLUG_texture_apply(inout vec4 fragment_color, const in vec3 normal)
        "if" outcome -- observed with
          Renderer: GeForce GTS 450/PCIe/SSE2
          Version: 4.5.0 NVIDIA 375.82
-         on Linux/x85_64.
+         on Linux/x86_64.
        ).
   */
 

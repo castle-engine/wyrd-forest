@@ -22,6 +22,7 @@ uses Classes,
   CastleControls, CastleUIState, CastleOnScreenMenu, CastleKeysMouse;
 
 type
+  { Ask player what terrain to load. }
   TStateMainMenu = class(TUIState)
   strict private
     ImageBackground: TCastleImageControl;

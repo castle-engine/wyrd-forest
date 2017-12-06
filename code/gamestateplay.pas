@@ -28,6 +28,7 @@ uses SysUtils, Classes,
   GameTerrain;
 
 type
+  { Play the game, instantiating terrain, trees, shooting targets and so on. }
   TStatePlay = class(TUIState)
   strict private
     Status: TCastleLabel;
@@ -35,6 +36,7 @@ type
     Terrain: TTerrain;
     Notifications: TCastleNotifications;
     SceneManager: TCastleSceneManager;
+    TreeTemplate, EnemyTemplate: TCastleScene;
   public
     InitialGridCount: Cardinal;
     procedure Start; override;
@@ -48,7 +50,7 @@ var
 
 implementation
 
-uses GameStateMainMenu;
+uses GameStateMainMenu, GameSpawnable;
 
 { TStatePlay ----------------------------------------------------------------- }
 
@@ -70,6 +72,12 @@ begin
   EnvironmentScene.ProcessEvents := true;
   SceneManager.Items.Add(EnvironmentScene);
   SceneManager.MainScene := EnvironmentScene;
+
+  TreeTemplate := TCastleScene.Create(FreeAtStop);
+  TreeTemplate.Load(ApplicationData('tree/oaktree.castle-anim-frames'));
+
+  EnemyTemplate := TCastleScene.Create(FreeAtStop);
+  EnemyTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board.castle-anim-frames'));
 
   OnScreenMenu := TCastleOnScreenMenu.Create(FreeAtStop);
   //OnScreenMenu.Exists := false;
@@ -124,30 +132,73 @@ begin
 end;
 
 function TStatePlay.Press(const Event: TInputPressRelease): boolean;
+
+  procedure TrySpawn(const Template: TCastleScene);
+  var
+    Spawn: TSpawnable;
+    Pos: TVector3;
+  begin
+    if (SceneManager.MouseRayHit <> nil) and
+       (SceneManager.MouseRayHit[0].Item = Terrain.Scene) then
+    begin
+      Pos := SceneManager.MouseRayHit[0].Point;
+      Spawn := TSpawnable.Create(Self);
+      Spawn.Spawn(Template, Pos);
+      SceneManager.Items.Add(Spawn);
+    end;
+  end;
+
 var
   S: string;
 begin
   Result := inherited;
   if Result then Exit;
 
+  if Event.IsMouseButton(mbLeft) then
+  begin
+    TrySpawn(EnemyTemplate);
+    Result := true;
+  end;
+
+  if Event.IsMouseButton(mbRight) then
+  begin
+    TrySpawn(TreeTemplate);
+    Result := true;
+  end;
+
   if Event.IsKey(K_F4) then
+  begin
     SceneManager.WalkCamera.MouseLook := not SceneManager.WalkCamera.MouseLook;
+    Result := true;
+  end;
+
   if Event.IsKey(K_F5) then
   begin
     S := FileNameAutoInc('wyrd_forest_screen_%d.png');
     Container.SaveScreen(S);
     Notifications.Show('Saved screen to ' + S);
+    Result := true;
   end;
+
   if Event.IsKey(K_F6) then
   begin
     S := FileNameAutoInc('terrain_%d.x3dv');
     Terrain.Scene.Save(S);
     Notifications.Show('Saved terrain 3D model to ' + S);
+    Result := true;
   end;
+
   if Event.IsKey(K_F10) then
+  begin
     OnScreenMenu.Exists := not OnScreenMenu.Exists;
+    Result := true;
+  end;
+
   if Event.IsKey(K_Escape) then
+  begin
     TUIState.Current := StateMainMenu;
+    Result := true;
+  end;
 end;
 
 end.

@@ -22,6 +22,7 @@ uses Classes, CastleControls, CastleKeysMouse, CastleUIState,
   CastleStringUtils, CastleGLImages;
 
 type
+  { Show loading screen and switch to StatePlay. }
   TStateLoading = class(TUIState)
   private
     ImageBackground: TCastleImageControl;

@@ -13,7 +13,7 @@
   ----------------------------------------------------------------------------
 }
 
-{ Display and edit a terrain. }
+{ Display and edit a terrain (TTerrain). }
 unit GameTerrain;
 
 interface
@@ -27,6 +27,7 @@ uses SysUtils, Classes,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications;
 
 type
+  { Display and edit a terrain. }
   TTerrain = class(TComponent)
   strict private
     FScene: TCastleScene;

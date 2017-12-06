@@ -43,8 +43,8 @@ type
     TextureMix, NormalDark, NormalDarkening: Single;
 
     { Terrain noise parameters. }
-    Divisions: Cardinal;
-    GridSize: Single;
+    GridCount: Cardinal;
+    GridStep: Single;
     Octaves: Single;
     Smoothness: Single;
     Amplitude: Single;
@@ -54,10 +54,12 @@ type
     procedure UpdateScene(Sender: TObject);
     procedure UpdateShader(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent; const InitialDivisions: Cardinal); reintroduce;
+    constructor Create(AOwner: TComponent; const InitialGridCount: Cardinal); reintroduce;
     procedure AddSlidersToMenu(OnScreenMenu: TCastleOnScreenMenu);
     procedure CreateScene;
     property Scene: TCastleScene read FScene;
+    { Fix SceneManager camera position to stand on ground }
+    procedure FixCamera;
   end;
 
   TStatePlay = class(TUIState)
@@ -67,7 +69,7 @@ type
     Terrain: TTerrain;
     Notifications: TCastleNotifications;
   public
-    InitialDivisions: Cardinal;
+    InitialGridCount: Cardinal;
     procedure Start; override;
     procedure Update(const SecondsPassed: Single;
       var HandleInput: boolean); override;
@@ -84,12 +86,12 @@ uses Math,
 
 { TTerrain ------------------------------------------------------------------- }
 
-constructor TTerrain.Create(AOwner: TComponent; const InitialDivisions: Cardinal);
+constructor TTerrain.Create(AOwner: TComponent; const InitialGridCount: Cardinal);
 begin
   inherited Create(AOwner);
 
-  Divisions := InitialDivisions;
-  GridSize := 0.57;
+  GridCount := InitialGridCount;
+  GridStep := 0.57;
   Octaves := 6.94;
   Smoothness := 1.63; //1.9;
   Amplitude := 7.85;
@@ -139,8 +141,8 @@ procedure TTerrain.AddSlidersToMenu(OnScreenMenu: TCastleOnScreenMenu);
 var
   I: Integer;
 begin
-  IntSlider('Divisions', @Divisions, 10, 200, @UpdateScene);
-  FloatSlider('Grid Size', @GridSize, 0.1, 2, @UpdateScene);
+  IntSlider('Grid Count', @GridCount, 10, 200, @UpdateScene);
+  FloatSlider('Grid Size', @GridStep, 0.1, 2, @UpdateScene);
   FloatSlider('Octaves', @Octaves, 0, 20, @UpdateScene);
   FloatSlider('Smoothness', @Smoothness, 1, 10, @UpdateScene);
   FloatSlider('Amplitude', @Amplitude, 0.1, 10, @UpdateScene);
@@ -225,29 +227,6 @@ procedure TTerrain.UpdateScene(Sender: TObject);
     Effect.SetParts([FragmentPart, VertexPart]);
   end;
 
-  { fix SceneManager camera position to stand on ground }
-  procedure FixCamera;
-  var
-    RayCollision: TRayCollision;
-    P: TVector3;
-  begin
-    P := SceneManager.WalkCamera.Position;
-    P.Y := 1000 * 1000;
-    RayCollision := SceneManager.Items.WorldRay(P, Vector3(0, -1, 0));
-    try
-      if RayCollision <> nil then
-      begin
-        P.Y := RayCollision[0].Point.Y + 2;
-        SceneManager.WalkCamera.Position := P;
-      end else
-      begin
-        WritelnLog('Camera stands outside of terrain, fixing');
-        SceneManager.WalkCamera.Position := SceneManager.Items.BoundingBox.Center;
-        FixCamera;
-      end;
-    finally FreeAndNil(RayCollision) end;
-  end;
-
 var
   TerrainNoise: TTerrainNoise;
   Shape: TShapeNode;
@@ -264,8 +243,8 @@ begin
     TerrainNoise.Frequency := Frequency;
     TerrainNoise.Heterogeneous := Heterogeneous;
 
-    { User controls Size only implicitly, by Divisions,
-      and controls explicitly GridSize.
+    { User controls Size only implicitly, by GridCount,
+      and controls explicitly GridStep.
       This is most comfortable usually, you have 2 parameters that
       behave orthogonally, and neither of them affects the "true" shape
       of the underlying terrain (represented by TerrainNoise).
@@ -277,9 +256,9 @@ begin
       Both of them allow you to see further, but in different ways
       (one of them sacrifices details, the other one increases mesh density).
     }
-    Size := Divisions * GridSize;
+    Size := GridCount * GridStep;
 
-    Shape := TerrainNoise.CreateNode(Divisions, Size,
+    Shape := TerrainNoise.CreateNode(GridCount, Size,
       Vector2(0, Size), Vector2(0, Size), nil);
 
     AdjustAppearance(Shape.Appearance);
@@ -299,6 +278,28 @@ begin
   SceneManager.MoveLimit := MoveLimit;
 end;
 
+procedure TTerrain.FixCamera;
+var
+  RayCollision: TRayCollision;
+  P: TVector3;
+begin
+  P := SceneManager.WalkCamera.Position;
+  P.Y := 1000 * 1000;
+  RayCollision := SceneManager.Items.WorldRay(P, Vector3(0, -1, 0));
+  try
+    if RayCollision <> nil then
+    begin
+      P.Y := RayCollision[0].Point.Y + 2;
+      SceneManager.WalkCamera.Position := P;
+    end else
+    begin
+      WritelnLog('Camera stands outside of terrain, fixing');
+      SceneManager.WalkCamera.Position := SceneManager.Items.BoundingBox.Center;
+      FixCamera;
+    end;
+  finally FreeAndNil(RayCollision) end;
+end;
+
 { TStatePlay ----------------------------------------------------------------- }
 
 procedure TStatePlay.Start;
@@ -312,12 +313,6 @@ begin
 
   SceneManager.NavigationType := ntWalk;
   SceneManager.WalkCamera.PreferredHeight := 2;
-  SceneManager.WalkCamera.SetView(
-    Vector3(1, 20, 1), // Vector3(50, 0, 50);
-    // look in the direction that shrinks / grows when you change Divisions
-    Vector3(1, 0, 1),
-    Vector3(0, 1, 0)
-  );
   SceneManager.WalkCamera.MoveSpeed := 10;
 
   EnvironmentScene := TCastleScene.Create(FreeAtStop);
@@ -346,9 +341,18 @@ begin
   Status.Color := Yellow; // you could use "Vector4(1, 1, 0, 1)" instead of Yellow
   InsertFront(Status);
 
-  Terrain := TTerrain.Create(FreeAtStop, InitialDivisions);
+  Terrain := TTerrain.Create(FreeAtStop, InitialGridCount);
   Terrain.CreateScene;
   Terrain.AddSlidersToMenu(OnScreenMenu);
+
+  SceneManager.WalkCamera.SetView(
+    // initially, stand in the middle
+    SceneManager.Items.BoundingBox.Center,
+    // look in the direction that shrinks / grows when you change GridCount
+    Vector3(1, 0, 1),
+    Vector3(0, 1, 0)
+  );
+  Terrain.FixCamera; // fix SceneManager.WalkCamera.Position.Y
 end;
 
 procedure TStatePlay.Update(const SecondsPassed: Single; var HandleInput: boolean);

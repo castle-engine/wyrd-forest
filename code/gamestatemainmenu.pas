@@ -26,8 +26,8 @@ type
   strict private
     SimpleBackground: TCastleSimpleBackground;
     ImageBackground: TCastleImageControl;
-    EditDivisions: TCastleEdit;
-    LabelDivisions: TCastleLabel;
+    EditGridCount: TCastleEdit;
+    LabelGridCount: TCastleLabel;
     ButtonPlay: TCastleButton;
     procedure PlayClick(Sender: TObject);
   public
@@ -62,26 +62,27 @@ begin
   ImageBackground.Anchor(vpMiddle);
   InsertFront(ImageBackground);
 
-  EditDivisions := TCastleEdit.Create(FreeAtStop);
-  EditDivisions.CaptureAllInput := true;
-  EditDivisions.AllowedChars := ['0'..'9'];
-  EditDivisions.Width := 300;
-  EditDivisions.MaxLength := 10;
-  EditDivisions.Text := '100';
-  EditDivisions.Anchor(hpLeft, 10);
-  EditDivisions.Anchor(vpBottom, 10);
-  InsertFront(EditDivisions);
+  EditGridCount := TCastleEdit.Create(FreeAtStop);
+  EditGridCount.CaptureAllInput := true;
+  EditGridCount.AllowedChars := ['0'..'9'];
+  EditGridCount.Width := 300;
+  EditGridCount.MaxLength := 10;
+  EditGridCount.Text := '100';
+  EditGridCount.Anchor(hpLeft, 10);
+  EditGridCount.Anchor(vpBottom, 10);
+  InsertFront(EditGridCount);
 
-  LabelDivisions := TCastleLabel.Create(FreeAtStop);
-  LabelDivisions.MaxWidth := StateContainer.UnscaledWidth - 20;
-  LabelDivisions.Anchor(hpLeft, 10);
-  LabelDivisions.Anchor(vpBottom, 10 + EditDivisions.CalculatedHeight + 10);
-  LabelDivisions.Color := Black;
-  LabelDivisions.Caption := 'Initial Terrain Divisions.' + NL +
-    '50 - 100 is good for experimenting with terrain noise parameters.' + NL +
-    '500 is good for actualy playing.' + NL +
-    '1000 is great for playing, it is large (and still plays very fast), but loading takes a while now (~50 secs).';
-  InsertFront(LabelDivisions);
+  LabelGridCount := TCastleLabel.Create(FreeAtStop);
+  LabelGridCount.MaxWidth := StateContainer.UnscaledWidth - 20;
+  LabelGridCount.Anchor(hpLeft, 10);
+  LabelGridCount.Anchor(vpBottom, 10 + EditGridCount.CalculatedHeight + 10);
+  LabelGridCount.Color := Black;
+  LabelGridCount.Caption := 'Initial Grid Count.' + NL +
+    'The terrain mesh size is (Grid Count) * (Grid Count).' + NL +
+    '- 50-100 is good for experimenting with terrain noise parameters.' + NL +
+    '- 500 is good for actualy playing.' + NL +
+    '- 1000 is great for playing, it is large (and still plays very fast), but loading takes a while now (~50 secs).';
+  InsertFront(LabelGridCount);
 
   ButtonPlay := TCastleButton.Create(FreeAtStop);
   ButtonPlay.Caption := 'PLAY';
@@ -96,7 +97,7 @@ end;
 
 procedure TStateMainMenu.PlayClick(Sender: TObject);
 begin
-  StatePlay.InitialDivisions := StrToInt(EditDivisions.Text);
+  StatePlay.InitialGridCount := StrToInt(EditGridCount.Text);
   TUIState.Current := StatePlay;
 end;
 

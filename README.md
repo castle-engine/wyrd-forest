@@ -4,6 +4,13 @@ Game about walking in a weird forest, planting healing trees, and shooting evil 
 
 Game sponsored by _Robert Daniel Murphy_ through Patreon ( https://www.patreon.com/castleengine ), showing off various [Castle Game Engine](https://castle-engine.sourceforge.io/) features. Thank you!
 
+Features:
+
+* Terrain editor (visually edit size and all generation parameters - octaves, smoothness, heterogeneous...)
+* Terrain shader with 3 blended texture layers and darkened slopes (parameters are also editable during the game)
+* Simple walking in FPS mode (AWSD keys, or drag with mouse, press F4 to toggle mouse look)
+* Ability to save generated terrain as 3D model in X3D format
+
 ## Compilation
 
 1. Get the [latest Castle Game Engine from GitHub](https://github.com/castle-engine/castle-engine/).

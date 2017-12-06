@@ -10,3 +10,6 @@ castle-engine-output
 
 # Lazarus generated files
 lib
+
+# Blender backups
+*.blend1

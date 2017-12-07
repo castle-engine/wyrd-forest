@@ -39,6 +39,7 @@ type
     TreeTemplate: TCastleScene;
     Trees: TCastleTransform;
     Enemies: TEnemies;
+    Crosshair: TCastleCrosshair;
 
     { Height (Y) at the given Position of the terrain.
       Only Pos.X, Pos.Z matter, input Pos.Y is ignored.
@@ -113,6 +114,10 @@ begin
   Status.Anchor(hpRight, -10);
   Status.Color := Yellow; // you could use "Vector4(1, 1, 0, 1)" instead of Yellow
   InsertFront(Status);
+
+  Crosshair := TCastleCrosshair.Create(Owner);
+  Crosshair.Exists := false; // synchronized with Camera.MouseLook
+  InsertFront(Crosshair);
 
   Terrain := TTerrain.Create(FreeAtStop, InitialGridCount);
   Terrain.SceneManager := SceneManager;
@@ -217,6 +222,7 @@ begin
   if Event.IsKey(K_F4) then
   begin
     SceneManager.WalkCamera.MouseLook := not SceneManager.WalkCamera.MouseLook;
+    Crosshair.Exists := SceneManager.WalkCamera.MouseLook;
     Result := true;
   end;
 

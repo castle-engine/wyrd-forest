@@ -27,11 +27,12 @@ uses SysUtils, Classes,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications;
 
 type
+  TFixCameraEvent = procedure of object;
+
   { Display and edit a terrain. }
   TTerrain = class(TComponent)
   strict private
     FScene: TCastleScene;
-    SceneManager: TCastleSceneManager;
 
     { Shader parameters. }
     Effect: TEffectNode;
@@ -53,14 +54,12 @@ type
     procedure UpdateScene(Sender: TObject);
     procedure UpdateShader(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent;
-      const InitialGridCount: Cardinal;
-      const ASceneManager: TCastleSceneManager); reintroduce;
+    SceneManager: TCastleSceneManager;
+    OnFixCamera: TFixCameraEvent;
+    constructor Create(AOwner: TComponent; const InitialGridCount: Cardinal); reintroduce;
     procedure AddSlidersToMenu(OnScreenMenu: TCastleOnScreenMenu);
     procedure CreateScene;
     property Scene: TCastleScene read FScene;
-    { Fix SceneManager camera position to stand on ground }
-    procedure FixCamera;
   end;
 
 implementation
@@ -69,12 +68,9 @@ uses Math;
 
 { TTerrain ------------------------------------------------------------------- }
 
-constructor TTerrain.Create(AOwner: TComponent; const InitialGridCount: Cardinal;
-  const ASceneManager: TCastleSceneManager);
+constructor TTerrain.Create(AOwner: TComponent; const InitialGridCount: Cardinal);
 begin
   inherited Create(AOwner);
-
-  SceneManager := ASceneManager;
 
   GridCount := InitialGridCount;
   GridStep := 0.57;
@@ -256,34 +252,12 @@ begin
 
   WritelnLog('Bounding box of terrain ' + Scene.BoundingBox.ToString);
 
-  FixCamera;
+  OnFixCamera;
 
   // make gravity work even if your position is over the world bbox
   MoveLimit := SceneManager.Items.BoundingBox;
   MoveLimit.Max := MoveLimit.Max + Vector3(0, 1000, 0);
   SceneManager.MoveLimit := MoveLimit;
-end;
-
-procedure TTerrain.FixCamera;
-var
-  RayCollision: TRayCollision;
-  P: TVector3;
-begin
-  P := SceneManager.WalkCamera.Position;
-  P.Y := 1000 * 1000;
-  RayCollision := SceneManager.Items.WorldRay(P, Vector3(0, -1, 0));
-  try
-    if RayCollision <> nil then
-    begin
-      P.Y := RayCollision[0].Point.Y + 2;
-      SceneManager.WalkCamera.Position := P;
-    end else
-    begin
-      WritelnLog('Camera stands outside of terrain, fixing');
-      SceneManager.WalkCamera.Position := SceneManager.Items.BoundingBox.Center;
-      FixCamera;
-    end;
-  finally FreeAndNil(RayCollision) end;
 end;
 
 end.

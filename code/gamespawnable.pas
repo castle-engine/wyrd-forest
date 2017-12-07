@@ -29,23 +29,24 @@ type
     procedure SpawnIsActiveChanged(
       Event: TX3DEvent; Value: TX3DField; const Time: TX3DTime);
   public
-    procedure Spawn(const SceneTemplate: TCastleScene; const APosition: TVector3);
+    procedure Spawn(const SceneTemplate: TCastleScene);
   end;
 
 implementation
 
 uses X3DNodes, CastleLog, CastleSceneCore;
 
-procedure TSpawnable.Spawn(const SceneTemplate: TCastleScene;
-  const APosition: TVector3);
+procedure TSpawnable.Spawn(const SceneTemplate: TCastleScene);
 var
   TimeSensor: TTimeSensorNode;
 begin
-  Translation := APosition;
-
   Scene := SceneTemplate.Clone(Self);
   Scene.ProcessEvents := true;
   Scene.Spatial := [ssRendering, ssDynamicCollisions];
+  { Otherwise, the shape of the Scene before the animation plays may blink
+    for a single frame. And our enemy and tree do not have the initial
+    (before animation) frame equal to the 1st spawn frame. }
+  Scene.ForceAnimationPose('spawn', 0, paForceNotLooping);
   Add(Scene);
 
   Scene.PlayAnimation('spawn', paForceNotLooping);

@@ -23,9 +23,9 @@ uses SysUtils, Classes,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
   CastleUIControls, CastleTerrain, CastleUIState, CastleSceneManager,
   CastleCameras, X3DNodes, X3DFields, CastleRendererBaseTypes,
-  CastleTransform, CastleVectors, CastleTriangles,
+  CastleTransform, CastleVectors, CastleTriangles, CastleTimeUtils,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications,
-  GameTerrain;
+  GameTerrain, GameEnemies;
 
 type
   { Play the game, instantiating terrain, trees, shooting targets and so on. }
@@ -36,7 +36,17 @@ type
     Terrain: TTerrain;
     Notifications: TCastleNotifications;
     SceneManager: TCastleSceneManager;
-    TreeTemplate, EnemyTemplate: TCastleScene;
+    TreeTemplate: TCastleScene;
+    Trees: TCastleTransform;
+    Enemies: TEnemies;
+
+    { Height (Y) at the given Position of the terrain.
+      Only Pos.X, Pos.Z matter, input Pos.Y is ignored.
+      Returns @false is this is not over terrain (maybe outside terrain,
+      maybe over another tree or enemy). }
+    function HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
+    { Fix SceneManager camera position to stand on ground }
+    procedure FixCamera;
   public
     InitialGridCount: Cardinal;
     procedure Start; override;
@@ -73,11 +83,16 @@ begin
   SceneManager.Items.Add(EnvironmentScene);
   SceneManager.MainScene := EnvironmentScene;
 
+  Enemies := TEnemies.Create(FreeAtStop);
+  Enemies.SceneManager := SceneManager;
+  Enemies.OnHeightAboveTerrain := @HeightAboveTerrain;
+  SceneManager.Items.Add(Enemies);
+
   TreeTemplate := TCastleScene.Create(FreeAtStop);
   TreeTemplate.Load(ApplicationData('tree/oaktree.castle-anim-frames'));
 
-  EnemyTemplate := TCastleScene.Create(FreeAtStop);
-  EnemyTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board.castle-anim-frames'));
+  Trees := TCastleTransform.Create(FreeAtStop);
+  SceneManager.Items.Add(Trees);
 
   OnScreenMenu := TCastleOnScreenMenu.Create(FreeAtStop);
   //OnScreenMenu.Exists := false;
@@ -99,7 +114,9 @@ begin
   Status.Color := Yellow; // you could use "Vector4(1, 1, 0, 1)" instead of Yellow
   InsertFront(Status);
 
-  Terrain := TTerrain.Create(FreeAtStop, InitialGridCount, SceneManager);
+  Terrain := TTerrain.Create(FreeAtStop, InitialGridCount);
+  Terrain.SceneManager := SceneManager;
+  Terrain.OnFixCamera := @FixCamera;
   Terrain.CreateScene;
   Terrain.AddSlidersToMenu(OnScreenMenu);
 
@@ -114,7 +131,38 @@ begin
     Vector3(1, 0, 1),
     Vector3(0, 1, 0)
   );
-  Terrain.FixCamera; // fix SceneManager.WalkCamera.Position.Y
+  FixCamera; // fix SceneManager.WalkCamera.Position.Y
+end;
+
+function TStatePlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
+var
+  RayCollision: TRayCollision;
+begin
+  Pos.Y := 1000 * 1000;
+  RayCollision := SceneManager.Items.WorldRay(Pos, Vector3(0, -1, 0));
+  try
+    Result := (RayCollision <> nil) and (RayCollision[0].Item = Terrain.Scene);
+    if Result then
+      Y := RayCollision[0].Point.Y;
+  finally FreeAndNil(RayCollision) end;
+end;
+
+procedure TStatePlay.FixCamera;
+var
+  P: TVector3;
+  Y: Single;
+begin
+  P := SceneManager.WalkCamera.Position;
+  if HeightAboveTerrain(P, Y) then
+  begin
+    P.Y := Y + 2;
+    SceneManager.WalkCamera.Position := P;
+  end else
+  begin
+    WritelnLog('Camera stands outside of terrain, fixing');
+    SceneManager.WalkCamera.Position := SceneManager.Items.BoundingBox.Center;
+    FixCamera;
+  end;
 end;
 
 procedure TStatePlay.Update(const SecondsPassed: Single; var HandleInput: boolean);
@@ -133,7 +181,7 @@ end;
 
 function TStatePlay.Press(const Event: TInputPressRelease): boolean;
 
-  procedure TrySpawn(const Template: TCastleScene);
+  procedure TrySpawnTree;
   var
     Spawn: TSpawnable;
     Pos: TVector3;
@@ -143,8 +191,9 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     begin
       Pos := SceneManager.MouseRayHit[0].Point;
       Spawn := TSpawnable.Create(Self);
-      Spawn.Spawn(Template, Pos);
-      SceneManager.Items.Add(Spawn);
+      Spawn.Spawn(TreeTemplate);
+      Spawn.Translation := Pos;
+      Trees.Add(Spawn);
     end;
   end;
 
@@ -154,15 +203,14 @@ begin
   Result := inherited;
   if Result then Exit;
 
-  if Event.IsMouseButton(mbLeft) then
-  begin
-    TrySpawn(EnemyTemplate);
-    Result := true;
-  end;
+  // if Event.IsMouseButton(mbLeft) then
+  // begin
+  //   Result := true;
+  // end;
 
   if Event.IsMouseButton(mbRight) then
   begin
-    TrySpawn(TreeTemplate);
+    TrySpawnTree;
     Result := true;
   end;
 

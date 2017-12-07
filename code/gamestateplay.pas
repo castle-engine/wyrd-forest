@@ -90,6 +90,15 @@ begin
   SceneManager.Items.Add(Enemies);
 
   TreeTemplate := TCastleScene.Create(FreeAtStop);
+  TreeTemplate.Name := 'Tree'; // for nicer debugging
+  { TODO: Tree bounding boxes are too large to use,
+    we should prepare placeholders to make them collide only as trunks.
+    For now, as a workaround, just disable collisions with them
+    (collisions with player (Collides) and collisions when shooting
+    rays (Pickable)). The TSpawnable.Spawn will take care
+    to actually apply this to the spawned trees. }
+  TreeTemplate.Collides := false;
+  TreeTemplate.Pickable := false;
   TreeTemplate.Load(ApplicationData('tree/oaktree.castle-anim-frames'));
 
   Trees := TCastleTransform.Create(FreeAtStop);
@@ -190,6 +199,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
   var
     Spawn: TSpawnable;
     Pos: TVector3;
+    ItemHit: TCastleTransform;
   begin
     if (SceneManager.MouseRayHit <> nil) and
        (SceneManager.MouseRayHit[0].Item = Terrain.Scene) then
@@ -199,6 +209,15 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
       Spawn.Spawn(TreeTemplate);
       Spawn.Translation := Pos;
       Trees.Add(Spawn);
+    end else
+    begin
+      if SceneManager.MouseRayHit = nil then
+        Notifications.Show('Nothing hit')
+      else
+      begin
+        ItemHit := SceneManager.MouseRayHit[0].Item;
+        Notifications.Show('Hit ' + ItemHit.Name + ' ' + ItemHit.ClassName);
+      end;
     end;
   end;
 

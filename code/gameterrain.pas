@@ -99,6 +99,7 @@ begin
   Scene.Spatial := [ssRendering, ssDynamicCollisions];
   { we change uniforms through OnScreenMenu, so the scene should react to events }
   Scene.ProcessEvents := true;
+  Scene.Name := 'TerrainScene'; // for nicer debugging
   SceneManager.Items.Add(Scene);
 
   UpdateScene(nil);

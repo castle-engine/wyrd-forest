@@ -25,7 +25,10 @@ type
     like a tree or shooting target. }
   TSpawnable = class(TCastleTransform)
   private
-    Scene: TCastleScene;
+    class var
+      NextId: Integer;
+    var
+      Scene: TCastleScene;
     procedure SpawnIsActiveChanged(
       Event: TX3DEvent; Value: TX3DField; const Time: TX3DTime);
   public
@@ -34,11 +37,13 @@ type
 
 implementation
 
-uses X3DNodes, CastleLog, CastleSceneCore;
+uses SysUtils,
+  X3DNodes, CastleLog, CastleSceneCore;
 
 procedure TSpawnable.Spawn(const SceneTemplate: TCastleScene);
 var
   TimeSensor: TTimeSensorNode;
+  SceneName: string;
 begin
   Scene := SceneTemplate.Clone(Self);
   Scene.ProcessEvents := true;
@@ -47,7 +52,16 @@ begin
     for a single frame. And our enemy and tree do not have the initial
     (before animation) frame equal to the 1st spawn frame. }
   Scene.ForceAnimationPose('spawn', 0, paForceNotLooping);
+  Scene.Collides := SceneTemplate.Collides;
+  Scene.Pickable := SceneTemplate.Pickable;
   Add(Scene);
+
+  SceneName := SceneTemplate.Name;
+  if SceneName = '' then
+    SceneName := 'Spawnable';
+  SceneName := SceneName + IntToStr(NextId);
+  Inc(NextId);
+  Scene.Name := SceneName; // assing unique name, for nicer debugging
 
   Scene.PlayAnimation('spawn', paForceNotLooping);
   TimeSensor := Scene.AnimationTimeSensor('spawn');

@@ -50,6 +50,7 @@ begin
   inherited;
 
   EnemyTemplate := TCastleScene.Create(Self);
+  EnemyTemplate.Name := 'Enemy'; // for nicer debugging
   EnemyTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board.castle-anim-frames'));
 
   EnemyLastSpawn := Timer;

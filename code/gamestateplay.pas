@@ -91,15 +91,7 @@ begin
 
   TreeTemplate := TCastleScene.Create(FreeAtStop);
   TreeTemplate.Name := 'Tree'; // for nicer debugging
-  { TODO: Tree bounding boxes are too large to use,
-    we should prepare placeholders to make them collide only as trunks.
-    For now, as a workaround, just disable collisions with them
-    (collisions with player (Collides) and collisions when shooting
-    rays (Pickable)). The TSpawnable.Spawn will take care
-    to actually apply this to the spawned trees. }
-  TreeTemplate.Collides := false;
-  TreeTemplate.Pickable := false;
-  TreeTemplate.Load(ApplicationData('tree/oaktree.castle-anim-frames'));
+  TreeTemplate.Load(ApplicationData('tree/oaktree_with_good_collisions.x3dv'));
 
   Trees := TCastleTransform.Create(FreeAtStop);
   SceneManager.Items.Add(Trees);

@@ -1,0 +1,23 @@
+#X3D V3.2 utf8
+PROFILE Interchange
+
+# Using the oaktree.castle-anim-frames for collisions is not good,
+# as it has a wide tree top (leaves), and in effect it's bounding box
+# is large. And when playing any castle-anim-frames animation,
+# we can use only its bounding box for collisions.
+#
+# So this model uses oaktree.castle-anim-frames for display,
+# and oaktree_collision_proxy.x3d (simple cylinder) for collisions.
+# Both oaktree.castle-anim-frames and oaktree_collision_proxy.x3d
+# are exported from a Blender file.
+# This file (oaktree_with_good_collisions.x3dv) is simply created manually
+# in a text editor.
+#
+# From the game code, this complication is invisible.
+# The code just loads oaktree_with_good_collisions.x3dv
+# and uses it for display and collisions.
+
+Collision {
+  proxy Inline { url "oaktree_collision_proxy.x3d" }
+  children Inline { url "oaktree.castle-anim-frames" }
+}

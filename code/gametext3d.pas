@@ -88,7 +88,7 @@ begin
   if LifeTime > FadeTime then
     RemoveMe := rtRemoveAndFree;
   Translation := Translation + World.GravityUp * (MoveSpeed * SecondsPassed);
-  Material.Transparency := MapRange(LifeTime, 0, FadeTime, 1, 0);
+  Material.Transparency := MapRange(LifeTime, 0, FadeTime, 0, 1);
 end;
 
 end.

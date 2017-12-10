@@ -166,6 +166,9 @@ begin
     Vector3(0, 1, 0)
   );
   FixCamera; // fix SceneManager.WalkCamera.Position.Y
+
+  // disable dragging, sometimes collides with OnScreenMenu usage
+  SceneManager.WalkCamera.Input := SceneManager.WalkCamera.Input - [ciMouseDragging];
 end;
 
 function TStatePlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;

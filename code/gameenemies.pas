@@ -182,7 +182,7 @@ begin
     Enemy.Translation := Pos;
 
     { make the enemy face player }
-    Dir := Pos - SceneManager.WalkCamera.Position;
+    Dir := SceneManager.WalkCamera.Position - Pos;
     if not VectorsParallel(Dir, SceneManager.GravityUp) then
     begin
       MakeVectorsOrthoOnTheirPlane(Dir, SceneManager.GravityUp);

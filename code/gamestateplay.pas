@@ -28,6 +28,8 @@ uses SysUtils, Classes,
   GameTerrain, GameEnemies;
 
 type
+  TTutorialState = (tsPlantTree, tsShootEnemy, tsFinished);
+
   { Play the game, instantiating terrain, trees, shooting targets and so on. }
   TStatePlay = class(TUIState)
   strict private
@@ -40,6 +42,8 @@ type
     Trees: TCastleTransform;
     Enemies: TEnemies;
     Crosshair: TCastleCrosshair;
+    TutorialLabel: TCastleLabel;
+    TutorialState: TTutorialState;
 
     { Height (Y) at the given Position of the terrain.
       Only Pos.X, Pos.Z matter, input Pos.Y is ignored.
@@ -97,9 +101,10 @@ begin
   SceneManager.Items.Add(Trees);
 
   OnScreenMenu := TCastleOnScreenMenu.Create(FreeAtStop);
-  //OnScreenMenu.Exists := false;
+  OnScreenMenu.Exists := false;
   OnScreenMenu.Anchor(hpRight, -10);
   OnScreenMenu.Anchor(vpBottom, 10);
+  OnScreenMenu.RegularSpaceBetweenItems := 4;
   InsertFront(OnScreenMenu);
 
   Notifications := TCastleNotifications.Create(Owner);
@@ -115,6 +120,21 @@ begin
   Status.Anchor(hpRight, -10);
   Status.Color := Yellow; // you could use "Vector4(1, 1, 0, 1)" instead of Yellow
   InsertFront(Status);
+
+  TutorialLabel := TCastleLabel.Create(FreeAtStop);
+  TutorialLabel.Anchor(hpMiddle);
+  TutorialLabel.Anchor(vpMiddle);
+  TutorialLabel.FontSize := 30;
+  TutorialLabel.Color := White;
+  TutorialLabel.Frame := true;
+  TutorialLabel.Padding := 20;
+  TutorialLabel.Caption :=
+    'Move with [AWSD] keys.' + NL +
+    'Toggle mouse look with [F4].' + NL +
+    'Press [right mouse button] (in mouse look or not) to plant a tree.';
+  InsertFront(TutorialLabel);
+
+  TutorialState := tsPlantTree;
 
   Crosshair := TCastleCrosshair.Create(Owner);
   Crosshair.Exists := false; // synchronized with Camera.MouseLook
@@ -176,6 +196,7 @@ begin
   Status.Caption := Format(
     'FPS: %f' +NL+
     'Move speed (change by [-] [+]): %f' + NL +
+    '[AWSD] or arrow keys to move' + NL +
     '[F4] Toggle mouse look' +NL+
     '[F5] Screenshot' +NL+
     '[F6] Save terrain to X3D file' +NL+
@@ -187,28 +208,73 @@ end;
 
 function TStatePlay.Press(const Event: TInputPressRelease): boolean;
 
-  procedure TrySpawnTree;
+  procedure HitNotification;
+  var
+    ItemHit: TCastleTransform;
+  begin
+    if SceneManager.MouseRayHit = nil then
+      Notifications.Show('Nothing hit')
+    else
+    begin
+      ItemHit := SceneManager.MouseRayHit[0].Item;
+      Notifications.Show('Hit ' + ItemHit.Name + ' ' + ItemHit.ClassName);
+    end;
+  end;
+
+  function TrySpawnTree: boolean;
   var
     Tree: TSpawned;
     Pos: TVector3;
-    ItemHit: TCastleTransform;
   begin
+    Result := false;
+
     if (SceneManager.MouseRayHit <> nil) and
        (SceneManager.MouseRayHit[0].Item = Terrain.Scene) then
     begin
+      Result := true;
+
       Pos := SceneManager.MouseRayHit[0].Point;
       Tree := TSpawned.Create(Self);
       Tree.Spawn(TreeTemplate);
       Tree.Translation := Pos;
       Trees.Add(Tree);
-    end else
-    begin
-      if SceneManager.MouseRayHit = nil then
-        Notifications.Show('Nothing hit')
-      else
+
+      { advance tutorial }
+      if TutorialState = tsPlantTree then
       begin
-        ItemHit := SceneManager.MouseRayHit[0].Item;
-        Notifications.Show('Hit ' + ItemHit.Name + ' ' + ItemHit.ClassName);
+        TutorialLabel.Caption := 'Press [left mouse button] to shoot the evil squirrel.';
+        Inc(TutorialState);
+      end;
+    end;
+  end;
+
+  function TryShootEnemy: boolean;
+  var
+    EnemyIndex: Integer;
+    Enemy: TEnemy;
+  begin
+    Result := false;
+
+    if SceneManager.MouseRayHit <> nil then
+    begin
+      EnemyIndex := SceneManager.MouseRayHit.IndexOfItem(TEnemy);
+      if EnemyIndex <> -1 then
+      begin
+        Enemy := TEnemy(SceneManager.MouseRayHit[EnemyIndex].Item);
+        if Enemy.Idle and (SceneManager.MouseRayHit[0].Triangle <> nil) then
+        begin
+          Result := true;
+          Enemy.Hit(
+            SceneManager.MouseRayHit[0].Point,
+            SceneManager.MouseRayHit[0].Triangle^);
+
+          { advance tutorial }
+          if TutorialState = tsShootEnemy then
+          begin
+            TutorialLabel.Exists := false;
+            Inc(TutorialState);
+          end;
+        end;
       end;
     end;
   end;
@@ -219,14 +285,15 @@ begin
   Result := inherited;
   if Result then Exit;
 
-  // if Event.IsMouseButton(mbLeft) then
-  // begin
-  //   Result := true;
-  // end;
+  if Event.IsMouseButton(mbLeft) then
+  begin
+    if not TryShootEnemy then HitNotification;
+    Result := true;
+  end;
 
   if Event.IsMouseButton(mbRight) then
   begin
-    TrySpawnTree;
+    if not TrySpawnTree then HitNotification;
     Result := true;
   end;
 

@@ -124,6 +124,8 @@ procedure TTerrain.AddSlidersToMenu(OnScreenMenu: TCastleOnScreenMenu);
 var
   I: Integer;
 begin
+  OnScreenMenu.Add('Terrain shape:');
+
   IntSlider('Grid Count', @GridCount, 10, 200, @UpdateScene);
   FloatSlider('Grid Size', @GridStep, 0.1, 2, @UpdateScene);
   FloatSlider('Octaves', @Octaves, 0, 20, @UpdateScene);
@@ -131,6 +133,8 @@ begin
   FloatSlider('Amplitude', @Amplitude, 0.1, 10, @UpdateScene);
   FloatSlider('Frequency', @Frequency, 0.001, 0.1, @UpdateScene);
   FloatSlider('Heterogeneous', @Heterogeneous, 0, 2, @UpdateScene);
+
+  OnScreenMenu.Add('Terrain shader:');
 
   for I := Low(TextureHeights) to High(TextureHeights) do
     FloatSlider('Texture Height ' + IntToStr(I), @TextureHeights[I], 0, 10, @UpdateShader);

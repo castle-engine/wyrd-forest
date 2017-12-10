@@ -8,7 +8,7 @@ Features:
 
 * Terrain editor (visually edit size and all generation parameters - octaves, smoothness, heterogeneous...).
 * Terrain shader with 3 blended texture layers and darkened slopes (parameters are also editable during the game).
-* Simple walking in FPS mode (you can use AWSD keys, array keys, drag with mouse, press F4 to toggle mouse look, C to crouch, Space to jump, Shift to run).
+* Simple walking in FPS mode (you can use AWSD keys, arrow keys, drag with mouse, press F4 to toggle mouse look, C to crouch, Space to jump, Shift to run).
 * You can save generated terrain as 3D model in X3D format (e.g. to inspect in view3dscene for debugging, or to use in other games as static mesh, without the need to deal with TTerrainNoise class).
 * You can spawn trees (right mouse button). Crosshair appears in mouse look mode.
 * Evil squirrels with shooting targets spawn around you.

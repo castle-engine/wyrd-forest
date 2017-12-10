@@ -20,28 +20,33 @@ interface
 
 uses Classes,
   CastleVectors, CastleTransform, CastleTimeUtils, CastleScene, CastleSceneManager,
+  CastleTriangles,
   GameSpawned;
 
 type
   THeightAboveTerrainEvent = function (Pos: TVector3; out Y: Single): boolean of object;
+
+  TEnemy = class(TSpawned)
+  private
+    EnemyIdleTemplate: TCastleScene;
+    FIdle: boolean;
+  protected
+    procedure SpawnEnded; override;
+  public
+    property Idle: boolean read FIdle;
+    { Enemy was hit. The Point should be
+      in local EnemyIdleTemplate scene coordinates. }
+    procedure Hit(const Point: TVector3; const Triangle: TTriangle);
+  end;
 
   { Enemies list. It is a TCastleTransform descendant, and it should
     also be added to the SceneManager.Items.
     It automatically takes care of spawning the enemies. }
   TEnemies = class(TCastleTransform)
   private
-    type
-      TEnemy = class(TSpawned)
-      protected
-        procedure SpawnEnded; override;
-      public
-        EnemyIdleTemplate: TCastleScene;
-      end;
-
-    var
-      EnemyLastSpawn: TTimerResult;
-      EnemySpawnTemplate: TCastleScene;
-      EnemyIdleTemplate: TCastleScene;
+    EnemyLastSpawn: TTimerResult;
+    EnemySpawnTemplate: TCastleScene;
+    EnemyIdleTemplate: TCastleScene;
     procedure TryEnemySpawn;
   public
     SceneManager: TCastleSceneManager;
@@ -53,11 +58,11 @@ type
 implementation
 
 uses Math,
-  CastleFilesUtils, CastleUtils;
+  CastleFilesUtils, CastleUtils, CastleShapes, CastleLog;
 
 { TEnemy --------------------------------------------------------------------- }
 
-procedure TEnemies.TEnemy.SpawnEnded;
+procedure TEnemy.SpawnEnded;
 begin
   { when the "spawn" animation finished,
     remove the animation, and add static scene (shared by all enemies)
@@ -65,6 +70,15 @@ begin
 
   Clear;
   Add(EnemyIdleTemplate);
+
+  FIdle := true;
+end;
+
+procedure TEnemy.Hit(const Point: TVector3; const Triangle: TTriangle);
+begin
+  // TODO
+  WritelnLog('Hit: ' + Triangle.ITexCoord2D(Point).ToString);
+  Free;
 end;
 
 { TEnemies ------------------------------------------------------------------- }

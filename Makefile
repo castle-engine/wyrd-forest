@@ -10,3 +10,10 @@ standalone:
 .PHONY: clean
 clean:
 	castle-engine clean
+	rm -Rf docs/
+
+.PHONY: docs
+docs:
+	mkdir -p docs/
+	pasdoc --auto-abstract code/*.pas \
+	  --output docs/

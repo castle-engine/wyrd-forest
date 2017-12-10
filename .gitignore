@@ -4,6 +4,7 @@
 # Output
 *.exe
 wyrd-forest
+docs/
 
 # Build tool generated files
 castle-engine-output

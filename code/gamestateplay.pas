@@ -28,7 +28,7 @@ uses SysUtils, Classes,
   GameTerrain, GameEnemies;
 
 type
-  TTutorialState = (tsPlantTree, tsShootEnemy, tsFinished);
+  TTutorialState = (tsShootEnemy, tsPlantTree, tsFinished);
 
   { Play the game, instantiating terrain, trees, shooting targets and so on. }
   TStatePlay = class(TUIState)
@@ -135,10 +135,10 @@ begin
   TutorialLabel.Caption :=
     'Move with [AWSD] keys.' + NL +
     'Toggle mouse look with [F4].' + NL +
-    'Press [right mouse button] (in mouse look or not) to plant a tree.';
+    'Press [left mouse button] to shoot the evil squirrel.';
   InsertFront(TutorialLabel);
 
-  TutorialState := tsPlantTree;
+  TutorialState := tsShootEnemy;
 
   Crosshair := TCastleCrosshair.Create(Owner);
   Crosshair.Exists := false; // synchronized with Camera.MouseLook
@@ -328,7 +328,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
       { advance tutorial }
       if TutorialState = tsPlantTree then
       begin
-        TutorialLabel.Caption := 'Press [left mouse button] to shoot the evil squirrel.';
+        TutorialLabel.Exists := false;
         Inc(TutorialState);
       end;
     end;
@@ -348,7 +348,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
       { advance tutorial }
       if TutorialState = tsShootEnemy then
       begin
-        TutorialLabel.Exists := false;
+        TutorialLabel.Caption := 'Press [right mouse button] to plant a tree.';
         Inc(TutorialState);
       end;
     end;

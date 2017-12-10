@@ -339,7 +339,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Result := EnemyUnderMouse(Enemy, Point, Triangle);
     if Result then
     begin
-      Enemy.Hit(Point, Triangle^);
+      Enemy.Hit(Point, Triangle^, SceneManager.WalkCamera.Direction);
 
       { advance tutorial }
       if TutorialState = tsShootEnemy then

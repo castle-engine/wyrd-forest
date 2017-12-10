@@ -39,7 +39,7 @@ type
       EnemyIdleTemplate, EnemyDestroyedPartTemplate: TCastleScene;
       FIdle: boolean;
     { Place 3 splitted parts of the original enemy in the World. }
-    procedure SplitIntoParts(const HitCoord: TVector2);
+    procedure SplitIntoParts(const HitCoord: TVector2; const HitDirection: TVector3);
   protected
     procedure SpawnEnded; override;
   public
@@ -48,7 +48,7 @@ type
     property Idle: boolean read FIdle;
     { Enemy was hit. The Point should be
       in local EnemyIdleTemplate scene coordinates. }
-    procedure Hit(const Point: TVector3; const Triangle: TTriangle);
+    procedure Hit(const Point: TVector3; const Triangle: TTriangle; const HitDirection: TVector3);
     function HitScore(const Point: TVector3; const Triangle: TTriangle): Cardinal;
     function HitScore(const HitCoord: TVector2): Cardinal;
   end;
@@ -74,7 +74,7 @@ implementation
 
 uses Math, SysUtils,
   CastleFilesUtils, CastleUtils, CastleShapes, CastleLog, X3DNodes, X3DFields,
-  CastleSceneCore,
+  CastleSceneCore, CastleBoxes,
   GameText3D;
 
 var
@@ -94,7 +94,7 @@ begin
   FIdle := true;
 end;
 
-procedure TEnemy.Hit(const Point: TVector3; const Triangle: TTriangle);
+procedure TEnemy.Hit(const Point: TVector3; const Triangle: TTriangle; const HitDirection: TVector3);
 var
   Text: TText3D;
   S: string;
@@ -117,7 +117,7 @@ begin
   Text.Translation := BoundingBox.Center;
   World.Add(Text);
 
-  SplitIntoParts(HitCoord);
+  SplitIntoParts(HitCoord, HitDirection);
 
   Free;
 end;
@@ -142,8 +142,9 @@ begin
     Result := Round(MapRange(D, TargetBullseyeRadius, TargetRadius, MaxScore - 1, 1));
 end;
 
-procedure TEnemy.SplitIntoParts(const HitCoord: TVector2);
+procedure TEnemy.SplitIntoParts(const HitCoord: TVector2; const HitDirection: TVector3);
 
+  (*
   procedure SortVector(var V: TVector3);
   var
     Min12: Integer;
@@ -158,20 +159,28 @@ procedure TEnemy.SplitIntoParts(const HitCoord: TVector2);
 
     OrderUp(V.Data[1], V.Data[2]);
   end;
+  *)
 
 var
-  ClipPlaneAngles: TVector3;
+  ClipPlaneAngles, Side, DirectionToBreakApart: TVector3;
   Scene: TCastleScene;
-  //Scenes: array [0..2] of TCastleScene;
+  SceneTransform: TCastleTransform;
   I: Integer;
   ClipEffect: TEffectNode;
   Body: TRigidBody;
-  Collider: TConvexHullCollider;
+  Collider: TBoxCollider;
 begin
-  ClipPlaneAngles[0] := RandomFloatRange(-Pi, Pi);
-  ClipPlaneAngles[1] := RandomFloatRange(-Pi, Pi);
-  ClipPlaneAngles[2] := RandomFloatRange(-Pi, Pi);
-  SortVector(ClipPlaneAngles);
+  // ClipPlaneAngles[0] := RandomFloatRange(-Pi, Pi);
+  // ClipPlaneAngles[1] := RandomFloatRange(-Pi, Pi);
+  // ClipPlaneAngles[2] := RandomFloatRange(-Pi, Pi);
+  // SortVector(ClipPlaneAngles);
+
+  { initially I experimented with more random ClipPlaneAngles,
+    but the below approach looks better.
+    Also, it doesn't require SortVector call. }
+  ClipPlaneAngles[0] := RandomFloatRange(-Pi          , -Pi / 3 - 0.2);
+  ClipPlaneAngles[1] := RandomFloatRange(-Pi / 3 + 0.2,  Pi / 3 - 0.2);
+  ClipPlaneAngles[2] := RandomFloatRange( Pi / 3 + 0.2,  Pi);
 
   for I := 0 to 2 do
   begin
@@ -182,8 +191,6 @@ begin
     // assigning Scene.Name is completely optional, it's only for debugging
     Scene.Name := EnemyDestroyedPartTemplate.Name + IntToStr(EnemyDestroyedPartId);
     Inc(EnemyDestroyedPartId);
-    Scene.Translation := Translation;
-    Scene.Rotation := Rotation;
     Scene.ProcessEvents := true;
 
     // set visual look of the scene (clip by shader effect)
@@ -192,15 +199,33 @@ begin
     (ClipEffect.Field('clipPlaneAngles') as TSFVec3f).Send(ClipPlaneAngles);
     (ClipEffect.Field('part') as TSFInt32).Send(I);
 
-    // set physics of the scene (TODO - unclipped)
-    // Body := TRigidBody.Create(Scene);
-    // Body.Dynamic := true;
-    // Collider := TConvexHullCollider.Create(Body);
-    // Collider.Scene := Scene;
-    // Collider.Restitution := 0.3;
-    // Scene.RigidBody := Body;
+    Side := TVector3.CrossProduct(Direction, Up);
+    case I of
+      0: DirectionToBreakApart := Side;
+      1: DirectionToBreakApart := RotatePointAroundAxisDeg( 120, Side, Direction);
+      2: DirectionToBreakApart := RotatePointAroundAxisDeg(-120, Side, Direction);
+    end;
 
-    World.Add(Scene);
+    // set physics of the scene
+    Body := TRigidBody.Create(Scene);
+    Body.Dynamic := true;
+    Body.InitialLinearVelocity := DirectionToBreakApart * 5 + HitDirection * 7;
+
+    Collider := TBoxCollider.Create(Body);
+    Collider.Size := LocalBoundingBox.Size;
+    Collider.Restitution := 0.3;
+    Collider.Density := 100.0;
+
+    // necessary to make Collider centered around (0,0,0) work
+    Scene.Translation := -LocalBoundingBox.Center;
+
+    SceneTransform := TCastleTransform.Create(EnemyDestroyedPartTemplate);
+    SceneTransform.Translation := Translation + LocalBoundingBox.Center;
+    SceneTransform.Rotation := Rotation;
+    SceneTransform.RigidBody := Body;
+    SceneTransform.Add(Scene);
+
+    World.Add(SceneTransform);
   end;
 end;
 

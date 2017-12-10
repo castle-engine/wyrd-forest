@@ -52,6 +52,10 @@ type
     function HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
     { Fix SceneManager camera position to stand on ground }
     procedure FixCamera;
+    { Determine Enemy and exact hit point and triangle,
+      looking at SceneManager.MouseRayHit. }
+    function EnemyUnderMouse(
+      out Enemy: TEnemy; out Point: TVector3; out Triangle: PTriangle): boolean;
   public
     InitialGridCount: Cardinal;
     procedure Start; override;
@@ -191,11 +195,46 @@ begin
   end;
 end;
 
+function TStatePlay.EnemyUnderMouse(
+  out Enemy: TEnemy; out Point: TVector3; out Triangle: PTriangle): boolean;
+var
+  EnemyIndex: Integer;
+begin
+  Result := false;
+
+  if SceneManager.MouseRayHit <> nil then
+  begin
+    EnemyIndex := SceneManager.MouseRayHit.IndexOfItem(TEnemy);
+    if EnemyIndex <> -1 then
+    begin
+      Enemy := SceneManager.MouseRayHit[EnemyIndex].Item as TEnemy;
+      Point := SceneManager.MouseRayHit[0].Point;
+      Triangle := SceneManager.MouseRayHit[0].Triangle;
+      if Enemy.Idle and (Triangle <> nil) then
+        Result := true;
+    end;
+  end;
+end;
+
 procedure TStatePlay.Update(const SecondsPassed: Single; var HandleInput: boolean);
+
+  function HitUnderMouse: Cardinal;
+  var
+    Enemy: TEnemy;
+    Point: TVector3;
+    Triangle: PTriangle;
+  begin
+    if EnemyUnderMouse(Enemy, Point, Triangle) then
+      Result := Enemy.HitScore(Point, Triangle^)
+    else
+      Result := 0;
+  end;
+
 begin
   Status.Caption := Format(
     'FPS: %f' +NL+
     'Move speed (change by [-] [+]): %f' + NL +
+    'Hit points under mouse: %d' + NL +
     '[AWSD] or arrow keys to move' + NL +
     '[F4] Toggle mouse look' +NL+
     '[F5] Screenshot' +NL+
@@ -203,7 +242,8 @@ begin
     '[F10] Toggle controls to tweak display' +NL+
     '[Escape] Back to main menu',
     [Container.Fps.RealTime,
-     SceneManager.WalkCamera.MoveSpeed]);
+     SceneManager.WalkCamera.MoveSpeed,
+     HitUnderMouse]);
 end;
 
 function TStatePlay.Press(const Event: TInputPressRelease): boolean;
@@ -250,31 +290,20 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
 
   function TryShootEnemy: boolean;
   var
-    EnemyIndex: Integer;
     Enemy: TEnemy;
+    Point: TVector3;
+    Triangle: PTriangle;
   begin
-    Result := false;
-
-    if SceneManager.MouseRayHit <> nil then
+    Result := EnemyUnderMouse(Enemy, Point, Triangle);
+    if Result then
     begin
-      EnemyIndex := SceneManager.MouseRayHit.IndexOfItem(TEnemy);
-      if EnemyIndex <> -1 then
-      begin
-        Enemy := TEnemy(SceneManager.MouseRayHit[EnemyIndex].Item);
-        if Enemy.Idle and (SceneManager.MouseRayHit[0].Triangle <> nil) then
-        begin
-          Result := true;
-          Enemy.Hit(
-            SceneManager.MouseRayHit[0].Point,
-            SceneManager.MouseRayHit[0].Triangle^);
+      Enemy.Hit(Point, Triangle^);
 
-          { advance tutorial }
-          if TutorialState = tsShootEnemy then
-          begin
-            TutorialLabel.Exists := false;
-            Inc(TutorialState);
-          end;
-        end;
+      { advance tutorial }
+      if TutorialState = tsShootEnemy then
+      begin
+        TutorialLabel.Exists := false;
+        Inc(TutorialState);
       end;
     end;
   end;

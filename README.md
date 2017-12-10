@@ -12,6 +12,7 @@ Features:
 * You can save generated terrain as 3D model in X3D format (e.g. to inspect in view3dscene for debugging, or to use in other games as static mesh, without the need to deal with TTerrainNoise class).
 * You can spawn trees (right mouse button). Crosshair appears in mouse look mode.
 * Evil squirrels with shooting targets spawn around you.
+* Shooting the evil squirrel gives you points, depending on how close to the "bullseye" you hit the white-red shooting target inside.
 * More to come soon :)
 
 ## Compilation

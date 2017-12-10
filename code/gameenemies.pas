@@ -28,15 +28,25 @@ type
 
   TEnemy = class(TSpawned)
   private
-    EnemyIdleTemplate: TCastleScene;
-    FIdle: boolean;
+    const
+      { These values reflect the position/size of the shooting target on
+        ../data/evil_squirrel/evil-squirrel.png . }
+      TargetCenter: TVector2 = (Data: (417 / 1024, 1 - 717 / 1024));
+      TargetRadius = 194 / 1024;
+      TargetBullseyeRadius = 10 / 1024;
+    var
+      EnemyIdleTemplate: TCastleScene;
+      FIdle: boolean;
   protected
     procedure SpawnEnded; override;
   public
+    const
+      MaxScore = 10;
     property Idle: boolean read FIdle;
     { Enemy was hit. The Point should be
       in local EnemyIdleTemplate scene coordinates. }
     procedure Hit(const Point: TVector3; const Triangle: TTriangle);
+    function HitScore(const Point: TVector3; const Triangle: TTriangle): Cardinal;
   end;
 
   { Enemies list. It is a TCastleTransform descendant, and it should
@@ -57,7 +67,7 @@ type
 
 implementation
 
-uses Math,
+uses Math, SysUtils,
   CastleFilesUtils, CastleUtils, CastleShapes, CastleLog,
   GameText3D;
 
@@ -78,13 +88,41 @@ end;
 procedure TEnemy.Hit(const Point: TVector3; const Triangle: TTriangle);
 var
   Text: TText3D;
+  S: string;
+  Score: Cardinal;
 begin
-  // TODO
-  Text := TText3D.Create(World, 'Hit: ' + Triangle.ITexCoord2D(Point).ToString);
+  Score := HitScore(Point, Triangle);
+
+  if Score = 0 then
+    S := 'Hit, but no points.'
+  else
+  if Score = MaxScore then
+    S := 'BULLSEYE! +10 POINTS!'
+  else
+    S := '+' + IntToStr(Score) + ' points!';
+
+  Text := TText3D.Create(World, S);
   Text.Translation := BoundingBox.Center;
   World.Add(Text);
 
   Free;
+end;
+
+function TEnemy.HitScore(const Point: TVector3; const Triangle: TTriangle): Cardinal;
+var
+  HitCoord: TVector2;
+  D: Single;
+begin
+  HitCoord := Triangle.ITexCoord2D(Point);
+  D := PointsDistance(HitCoord, TargetCenter);
+
+  if D > TargetRadius then
+    Result := 0
+  else
+  if D <= TargetBullseyeRadius then
+    Result := MaxScore
+  else
+    Result := Round(MapRange(D, TargetBullseyeRadius, TargetRadius, MaxScore - 1, 1));
 end;
 
 { TEnemies ------------------------------------------------------------------- }

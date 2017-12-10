@@ -26,6 +26,7 @@ uses Classes,
 type
   THeightAboveTerrainEvent = function (Pos: TVector3; out Y: Single): boolean of object;
 
+  { Enemy object, instantiated only by the TEnemies.Update. }
   TEnemy = class(TSpawned)
   private
     const
@@ -35,8 +36,10 @@ type
       TargetRadius = 194 / 1024;
       TargetBullseyeRadius = 10 / 1024;
     var
-      EnemyIdleTemplate: TCastleScene;
+      EnemyIdleTemplate, EnemyDestroyedPartTemplate: TCastleScene;
       FIdle: boolean;
+    { Place 3 splitted parts of the original enemy in the World. }
+    procedure SplitIntoParts(const HitCoord: TVector2);
   protected
     procedure SpawnEnded; override;
   public
@@ -47,6 +50,7 @@ type
       in local EnemyIdleTemplate scene coordinates. }
     procedure Hit(const Point: TVector3; const Triangle: TTriangle);
     function HitScore(const Point: TVector3; const Triangle: TTriangle): Cardinal;
+    function HitScore(const HitCoord: TVector2): Cardinal;
   end;
 
   { Enemies list. It is a TCastleTransform descendant, and it should
@@ -57,6 +61,7 @@ type
     EnemyLastSpawn: TTimerResult;
     EnemySpawnTemplate: TCastleScene;
     EnemyIdleTemplate: TCastleScene;
+    EnemyDestroyedPartTemplate: TCastleScene;
     procedure TryEnemySpawn;
   public
     SceneManager: TCastleSceneManager;
@@ -68,8 +73,12 @@ type
 implementation
 
 uses Math, SysUtils,
-  CastleFilesUtils, CastleUtils, CastleShapes, CastleLog,
+  CastleFilesUtils, CastleUtils, CastleShapes, CastleLog, X3DNodes, X3DFields,
+  CastleSceneCore,
   GameText3D;
+
+var
+  EnemyDestroyedPartId: Int64;
 
 { TEnemy --------------------------------------------------------------------- }
 
@@ -90,8 +99,11 @@ var
   Text: TText3D;
   S: string;
   Score: Cardinal;
+  HitCoord: TVector2;
 begin
-  Score := HitScore(Point, Triangle);
+  HitCoord := Triangle.ITexCoord2D(Point);
+
+  Score := HitScore(HitCoord);
 
   if Score = 0 then
     S := 'Hit, but no points.'
@@ -105,15 +117,20 @@ begin
   Text.Translation := BoundingBox.Center;
   World.Add(Text);
 
+  SplitIntoParts(HitCoord);
+
   Free;
 end;
 
 function TEnemy.HitScore(const Point: TVector3; const Triangle: TTriangle): Cardinal;
+begin
+  Result := HitScore(Triangle.ITexCoord2D(Point));
+end;
+
+function TEnemy.HitScore(const HitCoord: TVector2): Cardinal;
 var
-  HitCoord: TVector2;
   D: Single;
 begin
-  HitCoord := Triangle.ITexCoord2D(Point);
   D := PointsDistance(HitCoord, TargetCenter);
 
   if D > TargetRadius then
@@ -123,6 +140,68 @@ begin
     Result := MaxScore
   else
     Result := Round(MapRange(D, TargetBullseyeRadius, TargetRadius, MaxScore - 1, 1));
+end;
+
+procedure TEnemy.SplitIntoParts(const HitCoord: TVector2);
+
+  procedure SortVector(var V: TVector3);
+  var
+    Min12: Integer;
+  begin
+    Min12 := Iff(V.Data[1] < V.Data[2], 1, 2);
+    if V.Data[0] > V.Data[Min12] then
+      SwapValues(V.Data[0], V.Data[Min12]);
+
+    // now V.Data[0] is done, it is the smallest one
+    Assert(V.Data[0] <= V.Data[1]);
+    Assert(V.Data[0] <= V.Data[2]);
+
+    OrderUp(V.Data[1], V.Data[2]);
+  end;
+
+var
+  ClipPlaneAngles: TVector3;
+  Scene: TCastleScene;
+  //Scenes: array [0..2] of TCastleScene;
+  I: Integer;
+  ClipEffect: TEffectNode;
+  Body: TRigidBody;
+  Collider: TConvexHullCollider;
+begin
+  ClipPlaneAngles[0] := RandomFloatRange(-Pi, Pi);
+  ClipPlaneAngles[1] := RandomFloatRange(-Pi, Pi);
+  ClipPlaneAngles[2] := RandomFloatRange(-Pi, Pi);
+  SortVector(ClipPlaneAngles);
+
+  for I := 0 to 2 do
+  begin
+    { TODO: using World as owner for EnemyDestroyedPartTemplate feels more
+      appropriate, but causes access violation when exiting,
+      when combined with physics engine. }
+    Scene := EnemyDestroyedPartTemplate.Clone(EnemyDestroyedPartTemplate);
+    // assigning Scene.Name is completely optional, it's only for debugging
+    Scene.Name := EnemyDestroyedPartTemplate.Name + IntToStr(EnemyDestroyedPartId);
+    Inc(EnemyDestroyedPartId);
+    Scene.Translation := Translation;
+    Scene.Rotation := Rotation;
+    Scene.ProcessEvents := true;
+
+    // set visual look of the scene (clip by shader effect)
+    ClipEffect := Scene.Node('ClipEffect') as TEffectNode;
+    (ClipEffect.Field('hitPoint') as TSFVec2f).Send(HitCoord);
+    (ClipEffect.Field('clipPlaneAngles') as TSFVec3f).Send(ClipPlaneAngles);
+    (ClipEffect.Field('part') as TSFInt32).Send(I);
+
+    // set physics of the scene (TODO - unclipped)
+    // Body := TRigidBody.Create(Scene);
+    // Body.Dynamic := true;
+    // Collider := TConvexHullCollider.Create(Body);
+    // Collider.Scene := Scene;
+    // Collider.Restitution := 0.3;
+    // Scene.RigidBody := Body;
+
+    World.Add(Scene);
+  end;
 end;
 
 { TEnemies ------------------------------------------------------------------- }
@@ -153,6 +232,10 @@ begin
   EnemyIdleTemplate.Name := 'EnemyIdle'; // for nicer debugging
   EnemyIdleTemplate.Spatial := [ssStaticCollisions];
   EnemyIdleTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board_idle.x3d'));
+
+  EnemyDestroyedPartTemplate := TCastleScene.Create(Self);
+  EnemyDestroyedPartTemplate.Name := 'EnemyDestroyedPart'; // for nicer debugging
+  EnemyDestroyedPartTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-destroyed-part.x3dv'));
 
   EnemyLastSpawn := Timer;
 end;
@@ -222,6 +305,7 @@ begin
   begin
     Enemy := TEnemy.Create(Self);
     Enemy.EnemyIdleTemplate := EnemyIdleTemplate;
+    Enemy.EnemyDestroyedPartTemplate := EnemyDestroyedPartTemplate;
     Enemy.Spawn(EnemySpawnTemplate);
     Enemy.Translation := Pos;
 

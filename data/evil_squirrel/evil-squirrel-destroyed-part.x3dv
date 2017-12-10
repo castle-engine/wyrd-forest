@@ -1,0 +1,30 @@
+#X3D V3.2 utf8
+PROFILE Interchange
+
+# When enemy (evil squirrel) is destroyed, it breaks apart into 3 pieces.
+# Each piece is actually "evil-squirrel-board_idle.x3d",
+# clipped 2 planes in 3D (which equal to 2 rays in XY plane).
+#
+# We use a shader effect to clip the mesh,
+# this way we don't have to ever calculate the clipped mesh on CPU.
+
+DEF ClipEffect Effect {
+  language "GLSL"
+
+  # hit point, like a texture coordinate (both coords should be in [0..1])
+  inputOutput SFVec2f hitPoint 0.4 0.3
+
+  # 3 angles, in [-pi, pi] range
+  # (like https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atan.xhtml )
+  inputOutput SFVec3f clipPlaneAngles -1.0 0.2 1.0
+
+  # the part that should be displayed: 0, 1 or 2
+  inputOutput SFInt32 part 2
+
+  parts EffectPart {
+    type "FRAGMENT"
+    url "evil-squirrel-destroyed-part-shader.fs"
+  }
+}
+
+Inline { url "evil-squirrel-board_idle.x3d" }

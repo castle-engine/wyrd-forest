@@ -151,13 +151,17 @@ begin
   Terrain.AddSlidersToMenu(OnScreenMenu);
 
   SceneManager.WalkCamera.SetView(
-    { Initially, stand in the middle.
-      This is not really necessary -- the CreateScene already called UpdateScene
-      that already called FixCamera, and moved it to the middle (with message
-      "Camera stands outside of terrain, fixing" in log).
+    { Experimentally chosen sensible default position: }
+    Vector3(20.51, 0, 12.68),
+
+    { Alternative idea: Initially, stand in the middle.
+      Note that the CreateScene would call FixCamera,
+      and fix camera to stand in the middle anyway
+      (with message "Camera stands outside of terrain, fixing" in log).
       But doing it explicitly feels cleaner. }
-    SceneManager.Items.BoundingBox.Center,
-    // look in the direction that shrinks / grows when you change GridCount
+    //SceneManager.Items.BoundingBox.Center,
+
+    // Look in the direction that shrinks / grows when you change GridCount.
     Vector3(1, 0, 1),
     Vector3(0, 1, 0)
   );

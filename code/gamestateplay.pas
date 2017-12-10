@@ -61,7 +61,7 @@ var
 
 implementation
 
-uses GameStateMainMenu, GameSpawnable;
+uses GameStateMainMenu, GameSpawned;
 
 { TStatePlay ----------------------------------------------------------------- }
 
@@ -189,7 +189,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
 
   procedure TrySpawnTree;
   var
-    Spawn: TSpawnable;
+    Tree: TSpawned;
     Pos: TVector3;
     ItemHit: TCastleTransform;
   begin
@@ -197,10 +197,10 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
        (SceneManager.MouseRayHit[0].Item = Terrain.Scene) then
     begin
       Pos := SceneManager.MouseRayHit[0].Point;
-      Spawn := TSpawnable.Create(Self);
-      Spawn.Spawn(TreeTemplate);
-      Spawn.Translation := Pos;
-      Trees.Add(Spawn);
+      Tree := TSpawned.Create(Self);
+      Tree.Spawn(TreeTemplate);
+      Tree.Translation := Pos;
+      Trees.Add(Tree);
     end else
     begin
       if SceneManager.MouseRayHit = nil then

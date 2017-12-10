@@ -19,7 +19,8 @@ unit GameEnemies;
 interface
 
 uses Classes,
-  CastleVectors, CastleTransform, CastleTimeUtils, CastleScene, CastleSceneManager;
+  CastleVectors, CastleTransform, CastleTimeUtils, CastleScene, CastleSceneManager,
+  GameSpawned;
 
 type
   THeightAboveTerrainEvent = function (Pos: TVector3; out Y: Single): boolean of object;
@@ -29,8 +30,18 @@ type
     It automatically takes care of spawning the enemies. }
   TEnemies = class(TCastleTransform)
   private
-    EnemyLastSpawn: TTimerResult;
-    EnemyTemplate: TCastleScene;
+    type
+      TEnemy = class(TSpawned)
+      protected
+        procedure SpawnEnded; override;
+      public
+        EnemyIdleTemplate: TCastleScene;
+      end;
+
+    var
+      EnemyLastSpawn: TTimerResult;
+      EnemySpawnTemplate: TCastleScene;
+      EnemyIdleTemplate: TCastleScene;
     procedure TryEnemySpawn;
   public
     SceneManager: TCastleSceneManager;
@@ -42,16 +53,48 @@ type
 implementation
 
 uses Math,
-  CastleFilesUtils, CastleUtils,
-  GameSpawnable;
+  CastleFilesUtils, CastleUtils;
+
+{ TEnemy --------------------------------------------------------------------- }
+
+procedure TEnemies.TEnemy.SpawnEnded;
+begin
+  { when the "spawn" animation finished,
+    remove the animation, and add static scene (shared by all enemies)
+    EnemyIdleTemplate. }
+
+  Clear;
+  Add(EnemyIdleTemplate);
+end;
+
+{ TEnemies ------------------------------------------------------------------- }
 
 constructor TEnemies.Create(AOwner: TComponent);
 begin
   inherited;
 
-  EnemyTemplate := TCastleScene.Create(Self);
-  EnemyTemplate.Name := 'Enemy'; // for nicer debugging
-  EnemyTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board.castle-anim-frames'));
+  { We have two separate enemy templates -- one for spawning (animated),
+    one for standing (static, idle).
+    That is bacause a scene loaded from castle-anim-frames
+    does not have detailed collision information (instead it's always
+    approximated using a bounding box, even the TCastleScene.Spatial
+    includes ssDynamicCollisions).
+    And we need detailed collisions on "idle" scene to determine where
+    did we hit, and how to break apart the enemy on hit.
+
+    Also, it is a bit more optimal:
+    since we know EnemyIdleTemplate doesn't animate, we can simply place
+    this template in multiple positions on the world,
+    no need to do EnemyIdleTemplate.Clone. }
+
+  EnemySpawnTemplate := TCastleScene.Create(Self);
+  EnemySpawnTemplate.Name := 'EnemySpawn'; // for nicer debugging
+  EnemySpawnTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board.castle-anim-frames'));
+
+  EnemyIdleTemplate := TCastleScene.Create(Self);
+  EnemyIdleTemplate.Name := 'EnemyIdle'; // for nicer debugging
+  EnemyIdleTemplate.Spatial := [ssStaticCollisions];
+  EnemyIdleTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board_idle.x3d'));
 
   EnemyLastSpawn := Timer;
 end;
@@ -114,24 +157,25 @@ procedure TEnemies.TryEnemySpawn;
   end;
 
 var
-  Spawn: TSpawnable;
+  Enemy: TEnemy;
   Pos, Dir: TVector3;
 begin
   if FindSpawnPosition(Pos) then
   begin
-    Spawn := TSpawnable.Create(Self);
-    Spawn.Spawn(EnemyTemplate);
-    Spawn.Translation := Pos;
+    Enemy := TEnemy.Create(Self);
+    Enemy.EnemyIdleTemplate := EnemyIdleTemplate;
+    Enemy.Spawn(EnemySpawnTemplate);
+    Enemy.Translation := Pos;
 
     { make the enemy face player }
     Dir := Pos - SceneManager.WalkCamera.Position;
     if not VectorsParallel(Dir, SceneManager.GravityUp) then
     begin
       MakeVectorsOrthoOnTheirPlane(Dir, SceneManager.GravityUp);
-      Spawn.Direction := Dir;
+      Enemy.Direction := Dir;
     end;
 
-    Add(Spawn);
+    Add(Enemy);
   end;
 end;
 

@@ -13,8 +13,8 @@
   ----------------------------------------------------------------------------
 }
 
-{ Common logic of something that can be spawned (TSpawnable). }
-unit GameSpawnable;
+{ Common logic of something that can be spawned (TSpawned). }
+unit GameSpawned;
 
 interface
 
@@ -23,7 +23,7 @@ uses CastleTransform, CastleScene, CastleVectors, X3DFields, X3DTime;
 type
   { Common logic of something that can be spawned,
     like a tree or shooting target. }
-  TSpawnable = class(TCastleTransform)
+  TSpawned = class(TCastleTransform)
   private
     class var
       NextId: Integer;
@@ -31,6 +31,8 @@ type
       Scene: TCastleScene;
     procedure SpawnIsActiveChanged(
       Event: TX3DEvent; Value: TX3DField; const Time: TX3DTime);
+  protected
+    procedure SpawnEnded; virtual;
   public
     procedure Spawn(const SceneTemplate: TCastleScene);
   end;
@@ -40,7 +42,7 @@ implementation
 uses SysUtils,
   X3DNodes, CastleLog, CastleSceneCore;
 
-procedure TSpawnable.Spawn(const SceneTemplate: TCastleScene);
+procedure TSpawned.Spawn(const SceneTemplate: TCastleScene);
 var
   TimeSensor: TTimeSensorNode;
   SceneName: string;
@@ -58,10 +60,10 @@ begin
 
   SceneName := SceneTemplate.Name;
   if SceneName = '' then
-    SceneName := 'Spawnable';
+    SceneName := 'Spawned';
   SceneName := SceneName + IntToStr(NextId);
   Inc(NextId);
-  Scene.Name := SceneName; // assing unique name, for nicer debugging
+  Scene.Name := SceneName; // assign unique name, for nicer debugging
 
   Scene.PlayAnimation('spawn', paForceNotLooping);
   TimeSensor := Scene.AnimationTimeSensor('spawn');
@@ -71,20 +73,23 @@ begin
     TimeSensor.EventIsActive.AddNotification(@SpawnIsActiveChanged);
 end;
 
-procedure TSpawnable.SpawnIsActiveChanged(
+procedure TSpawned.SpawnIsActiveChanged(
   Event: TX3DEvent; Value: TX3DField; const Time: TX3DTime);
 var
   Val: boolean;
 begin
   Val := (Value as TSFBool).Value;
   if not Val then
-  begin
-    { This is not actually necessary now, we could as well just remain
-      in the last frame of the "spawn" animation,
-      it works as well for current tree and evil-squirrel models.
-      But in the future them may have more interesting "idle" animations. }
-    Scene.PlayAnimation('idle', paForceLooping);
-  end;
+    SpawnEnded;
+end;
+
+procedure TSpawned.SpawnEnded;
+begin
+  { This is not actually necessary now, we could as well just remain
+    in the last frame of the "spawn" animation,
+    it works as well for current tree and evil-squirrel models.
+    But in the future them may have more interesting "idle" animations. }
+  Scene.PlayAnimation('idle', paForceLooping);
 end;
 
 end.

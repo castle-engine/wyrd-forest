@@ -236,6 +236,9 @@ begin
     'Move speed (change by [-] [+]): %f' + NL +
     'Hit points under mouse: %d' + NL +
     '[AWSD] or arrow keys to move' + NL +
+    '[left click] shoot evil squirrel' + NL +
+    '[right click] plant tree' + NL +
+    '[ctrl + right click] shoot test physics box' + NL +
     '[F4] Toggle mouse look' +NL+
     '[F5] Screenshot' +NL+
     '[F6] Save terrain to X3D file' +NL+
@@ -259,6 +262,45 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
       ItemHit := SceneManager.MouseRayHit[0].Item;
       Notifications.Show('Hit ' + ItemHit.Name + ' ' + ItemHit.ClassName);
     end;
+  end;
+
+  procedure SpawnPhysicsBox;
+  var
+    Box: TBoxNode;
+    Shape: TShapeNode;
+    Root: TX3DRootNode;
+    Scene: TCastleScene;
+    Body: TRigidBody;
+    Collider: TBoxCollider;
+    Pos, Dir, Up: TVector3;
+  begin
+    Box := TBoxNode.CreateWithShape(Shape);
+    Box.Size := Vector3(0.5, 0.5, 0.5);
+
+    Shape.Material := TMaterialNode.Create;
+    Shape.Material.DiffuseColor := Vector3(0.5, 0.5, 1.0);
+
+    Root := TX3DRootNode.Create;
+    Root.AddChildren(Shape);
+
+    Scene := TCastleScene.Create(SceneManager);
+    Scene.Load(Root, true);
+
+    SceneManager.Camera.GetView(Pos, Dir, Up);
+    Scene.Translation := Pos + Dir * 2;
+    Scene.Direction := Dir;
+
+    Body := TRigidBody.Create(Self);
+    Body.InitialLinearVelocity := Dir * 4;
+    Body.Dynamic := true;
+
+    Collider := TBoxCollider.Create(Body);
+    Collider.Size := Box.Size;
+    Collider.Restitution := 0.3;
+    Collider.Density := 100.0;
+    Scene.RigidBody := Body;
+
+    SceneManager.Items.Add(Scene);
   end;
 
   function TrySpawnTree: boolean;
@@ -322,7 +364,13 @@ begin
 
   if Event.IsMouseButton(mbRight) then
   begin
-    if not TrySpawnTree then HitNotification;
+    if Container.Pressed.Keys[K_Ctrl] then
+    begin
+      SpawnPhysicsBox;
+    end else
+    begin
+      if not TrySpawnTree then HitNotification;
+    end;
     Result := true;
   end;
 

@@ -214,6 +214,18 @@ procedure TTerrain.UpdateScene(Sender: TObject);
     Effect.SetParts([FragmentPart, VertexPart]);
   end;
 
+  function CreateRigidBody: TRigidBody;
+  var
+    Collider: TMeshCollider;
+  begin
+    Result := TRigidBody.Create(Self);
+    Result.Dynamic := false;
+
+    Collider := TMeshCollider.Create(Result);
+    Collider.Scene := Scene;
+    Collider.Restitution := 0.3;
+  end;
+
 var
   TerrainNoise: TTerrainNoise;
   Shape: TShapeNode;
@@ -263,6 +275,9 @@ begin
   MoveLimit := SceneManager.Items.BoundingBox;
   MoveLimit.Max := MoveLimit.Max + Vector3(0, 1000, 0);
   SceneManager.MoveLimit := MoveLimit;
+
+  Scene.RigidBody.Free;
+  Scene.RigidBody := CreateRigidBody;
 end;
 
 end.

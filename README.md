@@ -13,6 +13,7 @@ Features:
 * You can spawn trees (right mouse button). Crosshair appears in mouse look mode.
 * Evil squirrels with shooting targets spawn around you.
 * Shooting the evil squirrel gives you points, depending on how close to the "bullseye" you hit the white-red shooting target inside. You can look at the "Hit points under mouse" in the upper-right corner to know how close to the bullseye you are before shooting:)
+* Shoot test physical boxes with Ctrl + right click (collide only with terrain and destroyed enemy parts, now)
 * More to come soon :)
 
 ## Compilation

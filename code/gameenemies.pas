@@ -77,8 +77,82 @@ uses Math, SysUtils,
   CastleSceneCore, CastleBoxes,
   GameText3D;
 
+{ TEnemyDestroyedPart -------------------------------------------------------- }
+
+type
+  { Destroyed enemy part, instantiated only by TEnemy.Hit. }
+  TEnemyDestroyedPart = class(TCastleTransform)
+  strict private
+  class var
+    NameId: Int64;
+  public
+    { Create one (out of 3) destroyed enemy parts.
+      The meaning of ClipPlaneAngles and PartIndex is the same
+      as appropriate shader effect parameters, see
+      ../data/evil_squirrel/evil-squirrel-destroyed-part.x3dv. }
+    constructor Create(const Enemy: TEnemy; const HitCoord: TVector2;
+      const ClipPlaneAngles: TVector3; const PartIndex: Integer;
+      const HitDirection: TVector3); reintroduce;
+  end;
+
+constructor TEnemyDestroyedPart.Create(const Enemy: TEnemy;
+  const HitCoord: TVector2;
+  const ClipPlaneAngles: TVector3; const PartIndex: Integer;
+  const HitDirection: TVector3);
 var
-  EnemyDestroyedPartId: Int64;
+  AOwner: TComponent;
+  Side, DirectionToBreakApart: TVector3;
+  Scene: TCastleScene;
+  ClipEffect: TEffectNode;
+  Body: TRigidBody;
+  Collider: TBoxCollider;
+begin
+  { TODO: using Enemy.World as owner for this feels more appropriate,
+    but causes access violation when exiting, when combined with physics engine.
+    As a workaround, we use EnemyDestroyedPartTemplate as our owner too. }
+  AOwner := Enemy.EnemyDestroyedPartTemplate;
+
+  inherited Create(AOwner);
+
+  Scene := Enemy.EnemyDestroyedPartTemplate.Clone(AOwner);
+  // assigning Scene.Name is completely optional, it's only for debugging
+  Scene.Name := 'EnemyDestroyedPart' + IntToStr(NameId);
+  Inc(NameId);
+  Scene.ProcessEvents := true;
+
+  // set visual look of the scene (clip by shader effect)
+  ClipEffect := Scene.Node('ClipEffect') as TEffectNode;
+  (ClipEffect.Field('hitPoint') as TSFVec2f).Send(HitCoord);
+  (ClipEffect.Field('clipPlaneAngles') as TSFVec3f).Send(ClipPlaneAngles);
+  (ClipEffect.Field('part') as TSFInt32).Send(PartIndex);
+
+  Side := TVector3.CrossProduct(Enemy.Direction, Enemy.Up);
+  case PartIndex of
+    0: DirectionToBreakApart := Side;
+    1: DirectionToBreakApart := RotatePointAroundAxisDeg( 120, Side, Enemy.Direction);
+    2: DirectionToBreakApart := RotatePointAroundAxisDeg(-120, Side, Enemy.Direction);
+    else raise EInternalError.Create('TEnemyDestroyedPart.Create:PartIndex invalid');
+  end;
+
+  // set physics of the scene
+  Body := TRigidBody.Create(Scene);
+  Body.Dynamic := true;
+  Body.InitialLinearVelocity := DirectionToBreakApart * 5 + HitDirection * 7;
+
+  Collider := TBoxCollider.Create(Body);
+  Collider.Size := Enemy.LocalBoundingBox.Size;
+  Collider.Restitution := 0.3;
+  Collider.Density := 100.0;
+
+  // necessary to make Collider centered around (0,0,0) work
+  Scene.Translation := -Enemy.LocalBoundingBox.Center;
+
+  Translation := Enemy.Translation + Enemy.LocalBoundingBox.Center;
+  Rotation := Enemy.Rotation;
+  RigidBody := Body;
+
+  Add(Scene);
+end;
 
 { TEnemy --------------------------------------------------------------------- }
 
@@ -162,13 +236,9 @@ procedure TEnemy.SplitIntoParts(const HitCoord: TVector2; const HitDirection: TV
   *)
 
 var
-  ClipPlaneAngles, Side, DirectionToBreakApart: TVector3;
-  Scene: TCastleScene;
-  SceneTransform: TCastleTransform;
+  ClipPlaneAngles: TVector3;
   I: Integer;
-  ClipEffect: TEffectNode;
-  Body: TRigidBody;
-  Collider: TBoxCollider;
+  Part: TEnemyDestroyedPart;
 begin
   // ClipPlaneAngles[0] := RandomFloatRange(-Pi, Pi);
   // ClipPlaneAngles[1] := RandomFloatRange(-Pi, Pi);
@@ -184,48 +254,9 @@ begin
 
   for I := 0 to 2 do
   begin
-    { TODO: using World as owner for EnemyDestroyedPartTemplate feels more
-      appropriate, but causes access violation when exiting,
-      when combined with physics engine. }
-    Scene := EnemyDestroyedPartTemplate.Clone(EnemyDestroyedPartTemplate);
-    // assigning Scene.Name is completely optional, it's only for debugging
-    Scene.Name := EnemyDestroyedPartTemplate.Name + IntToStr(EnemyDestroyedPartId);
-    Inc(EnemyDestroyedPartId);
-    Scene.ProcessEvents := true;
-
-    // set visual look of the scene (clip by shader effect)
-    ClipEffect := Scene.Node('ClipEffect') as TEffectNode;
-    (ClipEffect.Field('hitPoint') as TSFVec2f).Send(HitCoord);
-    (ClipEffect.Field('clipPlaneAngles') as TSFVec3f).Send(ClipPlaneAngles);
-    (ClipEffect.Field('part') as TSFInt32).Send(I);
-
-    Side := TVector3.CrossProduct(Direction, Up);
-    case I of
-      0: DirectionToBreakApart := Side;
-      1: DirectionToBreakApart := RotatePointAroundAxisDeg( 120, Side, Direction);
-      2: DirectionToBreakApart := RotatePointAroundAxisDeg(-120, Side, Direction);
-    end;
-
-    // set physics of the scene
-    Body := TRigidBody.Create(Scene);
-    Body.Dynamic := true;
-    Body.InitialLinearVelocity := DirectionToBreakApart * 5 + HitDirection * 7;
-
-    Collider := TBoxCollider.Create(Body);
-    Collider.Size := LocalBoundingBox.Size;
-    Collider.Restitution := 0.3;
-    Collider.Density := 100.0;
-
-    // necessary to make Collider centered around (0,0,0) work
-    Scene.Translation := -LocalBoundingBox.Center;
-
-    SceneTransform := TCastleTransform.Create(EnemyDestroyedPartTemplate);
-    SceneTransform.Translation := Translation + LocalBoundingBox.Center;
-    SceneTransform.Rotation := Rotation;
-    SceneTransform.RigidBody := Body;
-    SceneTransform.Add(Scene);
-
-    World.Add(SceneTransform);
+    Part := TEnemyDestroyedPart.Create(Self,
+      HitCoord, ClipPlaneAngles, I, HitDirection);
+    World.Add(Part);
   end;
 end;
 

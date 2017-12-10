@@ -1,11 +1,13 @@
 # This Makefile uses castle-engine build tool for most operations.
 # See https://github.com/castle-engine/castle-engine/wiki/Build-Tool .
 
-MODE=debug
+.PHONY: debug
+debug:
+	castle-engine compile --mode=debug
 
-.PHONY: standalone
-standalone:
-	castle-engine compile --mode=$(MODE)
+.PHONY: release
+release:
+	castle-engine compile --mode=release
 
 .PHONY: clean
 clean:

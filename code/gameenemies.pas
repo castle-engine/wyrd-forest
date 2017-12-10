@@ -58,7 +58,8 @@ type
 implementation
 
 uses Math,
-  CastleFilesUtils, CastleUtils, CastleShapes, CastleLog;
+  CastleFilesUtils, CastleUtils, CastleShapes, CastleLog,
+  GameText3D;
 
 { TEnemy --------------------------------------------------------------------- }
 
@@ -75,9 +76,14 @@ begin
 end;
 
 procedure TEnemy.Hit(const Point: TVector3; const Triangle: TTriangle);
+var
+  Text: TText3D;
 begin
   // TODO
-  WritelnLog('Hit: ' + Triangle.ITexCoord2D(Point).ToString);
+  Text := TText3D.Create(World, 'Hit: ' + Triangle.ITexCoord2D(Point).ToString);
+  Text.Translation := BoundingBox.Center;
+  World.Add(Text);
+
   Free;
 end;
 

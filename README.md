@@ -6,13 +6,13 @@ Game sponsored by _Robert Daniel Murphy_ through Patreon ( https://www.patreon.c
 
 Features:
 
-* Terrain editor (visually edit size and all generation parameters - octaves, smoothness, heterogeneous...).
-* Terrain shader with 3 blended texture layers and darkened slopes (parameters are also editable during the game).
+* Terrain editor (visually edit size and all generation parameters - octaves, smoothness, heterogeneous...). Press F10 to show.
+* Terrain shader with 3 blended texture layers and darkened slopes (parameters are also editable during the game, in the menu after pressing F10).
 * Simple walking in FPS mode (you can use AWSD keys, arrow keys, drag with mouse, press F4 to toggle mouse look, C to crouch, Space to jump, Shift to run).
 * You can save generated terrain as 3D model in X3D format (e.g. to inspect in view3dscene for debugging, or to use in other games as static mesh, without the need to deal with TTerrainNoise class).
 * You can spawn trees (right mouse button). Crosshair appears in mouse look mode.
 * Evil squirrels with shooting targets spawn around you.
-* Shooting the evil squirrel gives you points, depending on how close to the "bullseye" you hit the white-red shooting target inside.
+* Shooting the evil squirrel gives you points, depending on how close to the "bullseye" you hit the white-red shooting target inside. You can look at the "Hit points under mouse" in the upper-right corner to know how close to the bullseye you are before shooting:)
 * More to come soon :)
 
 ## Compilation

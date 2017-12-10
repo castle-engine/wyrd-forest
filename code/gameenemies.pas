@@ -83,8 +83,10 @@ type
   { Destroyed enemy part, instantiated only by TEnemy.Hit. }
   TEnemyDestroyedPart = class(TCastleTransform)
   strict private
-  class var
-    NameId: Int64;
+    class var
+      NameId: Int64;
+    var
+      LifeTime: TFloatTime;
   public
     { Create one (out of 3) destroyed enemy parts.
       The meaning of ClipPlaneAngles and PartIndex is the same
@@ -93,6 +95,7 @@ type
     constructor Create(const Enemy: TEnemy; const HitCoord: TVector2;
       const ClipPlaneAngles: TVector3; const PartIndex: Integer;
       const HitDirection: TVector3); reintroduce;
+    procedure Update(const SecondsPassed: Single; var RemoveMe: TRemoveType); override;
   end;
 
 constructor TEnemyDestroyedPart.Create(const Enemy: TEnemy;
@@ -114,7 +117,7 @@ begin
 
   inherited Create(AOwner);
 
-  Scene := Enemy.EnemyDestroyedPartTemplate.Clone(AOwner);
+  Scene := Enemy.EnemyDestroyedPartTemplate.Clone(Self);
   // assigning Scene.Name is completely optional, it's only for debugging
   Scene.Name := 'EnemyDestroyedPart' + IntToStr(NameId);
   Inc(NameId);
@@ -134,8 +137,8 @@ begin
     else raise EInternalError.Create('TEnemyDestroyedPart.Create:PartIndex invalid');
   end;
 
-  // set physics of the scene
-  Body := TRigidBody.Create(Scene);
+  // set physics
+  Body := TRigidBody.Create(Self);
   Body.Dynamic := true;
   Body.InitialLinearVelocity := DirectionToBreakApart * 5 + HitDirection * 7;
 
@@ -152,6 +155,16 @@ begin
   RigidBody := Body;
 
   Add(Scene);
+end;
+
+procedure TEnemyDestroyedPart.Update(const SecondsPassed: Single; var RemoveMe: TRemoveType);
+const
+  FadeTime = 10;
+begin
+  inherited;
+  LifeTime := LifeTime + SecondsPassed;
+  if LifeTime > FadeTime then
+    RemoveMe := rtRemoveAndFree;
 end;
 
 { TEnemy --------------------------------------------------------------------- }
@@ -379,7 +392,7 @@ end;
 
 procedure TEnemies.Update(const SecondsPassed: Single; var RemoveMe: TRemoveType);
 const
-  EnemySpawnDelay = 2.0;
+  EnemySpawnDelay = 4.0;
   EnemyMaxCount = 20;
 begin
   inherited;

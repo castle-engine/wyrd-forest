@@ -103,19 +103,13 @@ constructor TEnemyDestroyedPart.Create(const Enemy: TEnemy;
   const ClipPlaneAngles: TVector3; const PartIndex: Integer;
   const HitDirection: TVector3);
 var
-  AOwner: TComponent;
   Side, DirectionToBreakApart: TVector3;
   Scene: TCastleScene;
   ClipEffect: TEffectNode;
   Body: TRigidBody;
   Collider: TBoxCollider;
 begin
-  { TODO: using Enemy.World as owner for this feels more appropriate,
-    but causes access violation when exiting, when combined with physics engine.
-    As a workaround, we use EnemyDestroyedPartTemplate as our owner too. }
-  AOwner := Enemy.EnemyDestroyedPartTemplate;
-
-  inherited Create(AOwner);
+  inherited Create(Enemy.World);
 
   Scene := Enemy.EnemyDestroyedPartTemplate.Clone(Self);
   // assigning Scene.Name is completely optional, it's only for debugging

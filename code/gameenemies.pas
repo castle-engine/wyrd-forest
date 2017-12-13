@@ -68,6 +68,8 @@ type
     OnHeightAboveTerrain: THeightAboveTerrainEvent;
     constructor Create(AOwner: TComponent); override;
     procedure Update(const SecondsPassed: Single; var RemoveMe: TRemoveType); override;
+    { Prepare resources using SceneManager, to render faster when the game starts. }
+    procedure Prepare;
   end;
 
 implementation
@@ -301,6 +303,13 @@ begin
   EnemyDestroyedPartTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-destroyed-part.x3dv'));
 
   EnemyLastSpawn := Timer;
+end;
+
+procedure TEnemies.Prepare;
+begin
+  SceneManager.PrepareResources(EnemySpawnTemplate);
+  SceneManager.PrepareResources(EnemyIdleTemplate);
+  SceneManager.PrepareResources(EnemyDestroyedPartTemplate);
 end;
 
 procedure TEnemies.TryEnemySpawn;

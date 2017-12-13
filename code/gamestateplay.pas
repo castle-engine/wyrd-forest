@@ -95,11 +95,14 @@ begin
   Enemies := TEnemies.Create(FreeAtStop);
   Enemies.SceneManager := SceneManager;
   Enemies.OnHeightAboveTerrain := @HeightAboveTerrain;
+  Enemies.Prepare;
   SceneManager.Items.Add(Enemies);
 
   TreeTemplate := TCastleScene.Create(FreeAtStop);
   TreeTemplate.Name := 'Tree'; // for nicer debugging
   TreeTemplate.Load(ApplicationData('tree/oaktree_with_good_collisions.x3dv'));
+  { Prepare resources, to render faster when the game starts. }
+  SceneManager.PrepareResources(TreeTemplate);
 
   Trees := TCastleTransform.Create(FreeAtStop);
   SceneManager.Items.Add(Trees);

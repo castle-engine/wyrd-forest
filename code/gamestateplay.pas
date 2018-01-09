@@ -242,7 +242,7 @@ procedure TStatePlay.Update(const SecondsPassed: Single; var HandleInput: boolea
 
 begin
   Status.Caption := Format(
-    'FPS: %f' +NL+
+    'FPS: %s' +NL+
     'Move speed (change by [-] [+]): %f' + NL +
     'Hit points under mouse: %d' + NL +
     '[AWSD] or arrow keys to move' + NL +
@@ -254,7 +254,7 @@ begin
     '[F6] Save terrain to X3D file' +NL+
     '[F10] Toggle controls to tweak display' +NL+
     '[Escape] Back to main menu',
-    [Container.Fps.RealTime,
+    [Container.Fps.ToString,
      SceneManager.WalkCamera.MoveSpeed,
      HitUnderMouse]);
 end;

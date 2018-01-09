@@ -24,7 +24,7 @@ uses SysUtils, Classes,
   CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
   CastleUIControls, CastleUIState, CastleSceneManager,
-  CastleTransform, CastleVectors, CastleImages,
+  CastleTransform, CastleVectors, CastleImages, CastleApplicationProperties,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications,
   GameStatePlay, GameStateLoading, GameStateMainMenu;
 
@@ -55,16 +55,9 @@ begin
   TUIState.Current := StateMainMenu;
 end;
 
-function MyGetApplicationName: string;
-begin
-  Result := 'wyrd-forest';
-end;
-
 initialization
-  { This sets SysUtils.ApplicationName.
-    It is useful to make sure it is correct (as early as possible)
-    as our log routines use it. }
-  OnGetApplicationName := @MyGetApplicationName;
+  { Set ApplicationName early, as our log uses it. }
+  ApplicationProperties.ApplicationName := 'wyrd-forest';
 
   InitializeLog;
 

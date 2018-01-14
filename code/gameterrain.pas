@@ -23,7 +23,7 @@ uses SysUtils, Classes,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
   CastleUIControls, CastleTerrain, CastleUIState, CastleSceneManager,
   CastleCameras, X3DNodes, X3DFields, CastleRendererBaseTypes,
-  CastleTransform, CastleVectors, CastleTriangles,
+  CastleTransform, CastleVectors, CastleTriangles, CastleRectangles,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications;
 
 type
@@ -212,6 +212,9 @@ procedure TTerrain.UpdateScene(Sender: TObject);
     VertexPart.SetUrl([ApplicationData('terrain/shaders/terrain.vs')]);
 
     Effect.SetParts([FragmentPart, VertexPart]);
+
+    { make the material lit }
+    Appearance.Material := TMaterialNode.Create;
   end;
 
   function CreateRigidBody: TRigidBody;
@@ -228,7 +231,9 @@ procedure TTerrain.UpdateScene(Sender: TObject);
 
 var
   TerrainNoise: TTerrainNoise;
-  Shape: TShapeNode;
+  TerrainNode: TAbstractChildNode;
+  Appearance: TAppearanceNode;
+  Range: TFloatRectangle;
   Root: TX3DRootNode;
   Size: Single;
   MoveLimit: TBox3D;
@@ -257,14 +262,14 @@ begin
     }
     Size := GridCount * GridStep;
 
-    Shape := TerrainNoise.CreateNode(GridCount, Size,
-      Vector2(0, Size), Vector2(0, Size));
-
-    AdjustAppearance(Shape.Appearance);
+    Appearance := TAppearanceNode.Create;
+    AdjustAppearance(Appearance);
+    Range := FloatRectangle(0, 0, Size, Size);
+    TerrainNode := TerrainNoise.CreateNode(GridCount, Range, Range, Appearance);
   finally FreeAndNil(TerrainNoise) end;
 
   Root := TX3DRootNode.Create;
-  Root.AddChildren(Shape);
+  Root.AddChildren(TerrainNode);
   Scene.Load(Root, true);
 
   WritelnLog('Bounding box of terrain ' + Scene.BoundingBox.ToString);

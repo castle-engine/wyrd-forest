@@ -258,7 +258,7 @@ begin
     Size := GridCount * GridStep;
 
     Shape := TerrainNoise.CreateNode(GridCount, Size,
-      Vector2(0, Size), Vector2(0, Size), nil);
+      Vector2(0, Size), Vector2(0, Size));
 
     AdjustAppearance(Shape.Appearance);
   finally FreeAndNil(TerrainNoise) end;

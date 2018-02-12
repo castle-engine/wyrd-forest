@@ -27,3 +27,12 @@
     Renderer: GeForce GTS 450/PCIe/SSE2
     Version: 4.5.0 NVIDIA 375.82
     on Linux/x86_64.
+
+- When you hold mouse button pressed, mouse look doesn't work
+  (confirmed on both Linux and Windows10).
+  It works with mouse buttons released.
+
+  Weird: if you hold mouse button *and* some key (even a useless
+  key like "H"), then mouse look works again!
+
+  Is this a bug of CGE?

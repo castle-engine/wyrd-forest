@@ -279,7 +279,7 @@ begin
     one for standing (static, idle).
     That is bacause a scene loaded from castle-anim-frames
     does not have detailed collision information (instead it's always
-    approximated using a bounding box, even the TCastleScene.Spatial
+    approximated using a bounding box, even when the TCastleScene.Spatial
     includes ssDynamicCollisions).
     And we need detailed collisions on "idle" scene to determine where
     did we hit, and how to break apart the enemy on hit.

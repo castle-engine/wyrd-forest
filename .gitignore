@@ -5,6 +5,8 @@
 *.exe
 wyrd-forest
 docs/
+automatic-windows-resources.res
+*.log
 
 # Build tool generated files
 castle-engine-output

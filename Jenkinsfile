@@ -17,11 +17,13 @@ pipeline {
         sh 'castle-engine package --os=linux --cpu=x86_64 --verbose'
       }
     }
-    stage('Build Mobile') {
-      steps {
-        sh 'castle-engine package --os=android --cpu=arm --verbose'
-      }
-    }
+    // TODO: Fix Jenkins + Docker to enable building debug Android APK,
+    // not signed with any production key.
+    // stage('Build Mobile') {
+    //   steps {
+    //     sh 'castle-engine package --os=android --cpu=arm --verbose'
+    //   }
+    // }
   }
   post {
     success {

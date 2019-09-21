@@ -31,7 +31,7 @@ uses SysUtils, Classes,
 { application routines ------------------------------------------------------- }
 
 var
-  Window: TCastleWindowCustom;
+  Window: TCastleWindowBase;
 
 { One-time initialization of resources. }
 procedure ApplicationInitialize;
@@ -42,7 +42,7 @@ begin
   Window.Container.UIScaling := usEncloseReferenceSize;
 
   { customize TCastleLabel with TCastleLabel.Frame=true look }
-  Theme.Images[tiLabel] := LoadImage(ApplicationData('gui/transparent_pixel.png'));
+  Theme.Images[tiLabel] := LoadImage('castle-data:/gui/transparent_pixel.png');
   Theme.OwnsImages[tiLabel] := true;
   Theme.Corners[tiLabel] := Vector4(0, 0, 0, 0);
 
@@ -65,6 +65,6 @@ initialization
   Application.OnInitialize := @ApplicationInitialize;
 
   { create Window and initialize Window callbacks }
-  Window := TCastleWindowCustom.Create(Application);
+  Window := TCastleWindowBase.Create(Application);
   Application.MainWindow := Window;
 end.

@@ -53,7 +53,7 @@ begin
   { Otherwise, the shape of the Scene before the animation plays may blink
     for a single frame. And our enemy and tree do not have the initial
     (before animation) frame equal to the 1st spawn frame. }
-  Scene.ForceAnimationPose('spawn', 0, paForceNotLooping);
+  Scene.ForceAnimationPose('spawn', 0, false);
   Scene.Collides := SceneTemplate.Collides;
   Scene.Pickable := SceneTemplate.Pickable;
   Add(Scene);
@@ -65,7 +65,7 @@ begin
   Inc(NextId);
   Scene.Name := SceneName; // assign unique name, for nicer debugging
 
-  Scene.PlayAnimation('spawn', paForceNotLooping);
+  Scene.PlayAnimation('spawn', false);
   TimeSensor := Scene.AnimationTimeSensor('spawn');
   if TimeSensor = nil then
     WritelnWarning('Missing TimeSensor for animation "spawn"')
@@ -89,7 +89,7 @@ begin
     in the last frame of the "spawn" animation,
     it works as well for current tree and evil-squirrel models.
     But in the future them may have more interesting "idle" animations. }
-  Scene.PlayAnimation('idle', paForceLooping);
+  Scene.PlayAnimation('idle', true);
 end;
 
 end.

@@ -87,7 +87,7 @@ begin
   SceneManager.WalkCamera.MoveSpeed := 10;
 
   EnvironmentScene := TCastleScene.Create(FreeAtStop);
-  EnvironmentScene.Load(ApplicationData('environment/environment.x3dv'));
+  EnvironmentScene.Load('castle-data:/environment/environment.x3dv');
   EnvironmentScene.ProcessEvents := true;
   SceneManager.Items.Add(EnvironmentScene);
   SceneManager.MainScene := EnvironmentScene;
@@ -100,7 +100,7 @@ begin
 
   TreeTemplate := TCastleScene.Create(FreeAtStop);
   TreeTemplate.Name := 'Tree'; // for nicer debugging
-  TreeTemplate.Load(ApplicationData('tree/oaktree_with_good_collisions.x3dv'));
+  TreeTemplate.Load('castle-data:/tree/oaktree_with_good_collisions.x3dv');
   { Prepare resources, to render faster when the game starts. }
   SceneManager.PrepareResources(TreeTemplate);
 

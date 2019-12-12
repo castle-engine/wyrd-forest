@@ -283,12 +283,14 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Body: TRigidBody;
     Collider: TBoxCollider;
     Pos, Dir, Up: TVector3;
+    Material: TMaterialNode;
   begin
     Box := TBoxNode.CreateWithShape(Shape);
     Box.Size := Vector3(0.5, 0.5, 0.5);
 
-    Shape.Material := TMaterialNode.Create;
-    Shape.Material.DiffuseColor := Vector3(0.5, 0.5, 1.0);
+    Material := TMaterialNode.Create;
+    Material.DiffuseColor := Vector3(0.5, 0.5, 1.0);
+    Shape.Material := Material;
 
     Root := TX3DRootNode.Create;
     Root.AddChildren(Shape);

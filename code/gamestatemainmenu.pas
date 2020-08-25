@@ -57,7 +57,7 @@ begin
   ImageBackground := TCastleImageControl.Create(FreeAtStop);
   ImageBackground.Stretch := true;
   ImageBackground.ProportionalScaling := psEnclose;
-  ImageBackground.URL := ApplicationData('gui/loading.png');
+  ImageBackground.URL := 'castle-data:/gui/loading.png';
   ImageBackground.FullSize := true;
   ImageBackground.Anchor(hpMiddle);
   ImageBackground.Anchor(vpMiddle);
@@ -76,7 +76,7 @@ begin
   LabelGridCount := TCastleLabel.Create(FreeAtStop);
   LabelGridCount.MaxWidth := StateContainer.UnscaledWidth - 20;
   LabelGridCount.Anchor(hpLeft, 10);
-  LabelGridCount.Anchor(vpBottom, 10 + EditGridCount.CalculatedHeight + 10);
+  LabelGridCount.Anchor(vpBottom, 10 + EditGridCount.EffectiveHeight + 10);
   LabelGridCount.Color := White;
   LabelGridCount.Frame := true;
   LabelGridCount.Padding := 10;

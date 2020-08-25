@@ -26,7 +26,7 @@ type
     Used to show messages like "+10 points!" or "Bullseye!" during the game. }
   TText3D = class(TCastleScene)
   private
-    Material: TMaterialNode;
+    Material: TUnlitMaterialNode;
     LifeTime: TFloatTime;
   public
     constructor Create(const AOwner: TComponent; const Text: string); reintroduce;
@@ -57,8 +57,7 @@ begin
   FontStyle.Bold := true;
   TextNode.FontStyle := FontStyle;
 
-  Material := TMaterialNode.Create;
-  Material.ForcePureEmissive;
+  Material := TUnlitMaterialNode.Create;
   Material.EmissiveColor := YellowRGB;
 
   Shape := TShapeNode.Create;

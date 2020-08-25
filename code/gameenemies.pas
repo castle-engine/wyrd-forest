@@ -291,16 +291,16 @@ begin
 
   EnemySpawnTemplate := TCastleScene.Create(Self);
   EnemySpawnTemplate.Name := 'EnemySpawn'; // for nicer debugging
-  EnemySpawnTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board.castle-anim-frames'));
+  EnemySpawnTemplate.Load('castle-data:/evil_squirrel/evil-squirrel-board.castle-anim-frames');
 
   EnemyIdleTemplate := TCastleScene.Create(Self);
   EnemyIdleTemplate.Name := 'EnemyIdle'; // for nicer debugging
   EnemyIdleTemplate.Spatial := [ssStaticCollisions];
-  EnemyIdleTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-board_idle.x3d'));
+  EnemyIdleTemplate.Load('castle-data:/evil_squirrel/evil-squirrel-board_idle.x3d');
 
   EnemyDestroyedPartTemplate := TCastleScene.Create(Self);
   EnemyDestroyedPartTemplate.Name := 'EnemyDestroyedPart'; // for nicer debugging
-  EnemyDestroyedPartTemplate.Load(ApplicationData('evil_squirrel/evil-squirrel-destroyed-part.x3dv'));
+  EnemyDestroyedPartTemplate.Load('castle-data:/evil_squirrel/evil-squirrel-destroyed-part.x3dv');
 
   EnemyLastSpawn := Timer;
 end;
@@ -356,8 +356,8 @@ procedure TEnemies.TryEnemySpawn;
   begin
     for I := 0 to SearchSpawnPositionTries - 1 do
     begin
-      Pos := SceneManager.WalkCamera.Position;
-      Dir := SceneManager.WalkCamera.DirectionInGravityPlane;
+      Pos := SceneManager.WalkNavigation.Position;
+      Dir := SceneManager.WalkNavigation.DirectionInGravityPlane;
       Side := TVector3.CrossProduct(Dir, SceneManager.GravityUp);
 
       Pos := Pos +
@@ -382,7 +382,7 @@ begin
     Enemy.Translation := Pos;
 
     { make the enemy face player }
-    Dir := SceneManager.WalkCamera.Position - Pos;
+    Dir := SceneManager.WalkNavigation.Position - Pos;
     if not VectorsParallel(Dir, SceneManager.GravityUp) then
     begin
       MakeVectorsOrthoOnTheirPlane(Dir, SceneManager.GravityUp);

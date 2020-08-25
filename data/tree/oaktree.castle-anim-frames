@@ -73,13 +73,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -171,13 +166,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -271,13 +261,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -369,13 +354,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -467,13 +447,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -565,13 +540,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -663,13 +633,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -761,13 +726,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -859,13 +819,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"
@@ -957,13 +912,8 @@
 								<ImageTexture DEF="IM_oakleaf_fall_tga_001"
 								              url='"oakleaf_fall.tga" "/home/michalis/sources/castle-engine/wyrd-forest/data/tree/oakleaf_fall.tga"'
 								              />
-								<Material DEF="MA_leaves"
-								          diffuseColor="0.000 0.000 0.000"
-								          specularColor="0.000 0.000 0.000"
+								<UnlitMaterial DEF="MA_leaves"
 								          emissiveColor="0.800 0.800 0.800"
-								          ambientIntensity="0.000"
-								          shininess="0.000"
-								          transparency="0.000"
 								          />
 							</Appearance>
 							<IndexedFaceSet solid="false"

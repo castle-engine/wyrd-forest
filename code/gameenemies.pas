@@ -128,15 +128,15 @@ begin
   Side := TVector3.CrossProduct(Enemy.Direction, Enemy.Up);
   case PartIndex of
     0: DirectionToBreakApart := Side;
-    1: DirectionToBreakApart := RotatePointAroundAxisDeg( 120, Side, Enemy.Direction);
-    2: DirectionToBreakApart := RotatePointAroundAxisDeg(-120, Side, Enemy.Direction);
+    1: DirectionToBreakApart := RotatePointAroundAxisRad(DegToRad( 120), Side, Enemy.Direction);
+    2: DirectionToBreakApart := RotatePointAroundAxisRad(DegToRad(-120), Side, Enemy.Direction);
     else raise EInternalError.Create('TEnemyDestroyedPart.Create:PartIndex invalid');
   end;
 
   // set physics
   Body := TRigidBody.Create(Self);
   Body.Dynamic := true;
-  Body.InitialLinearVelocity := DirectionToBreakApart * 5 + HitDirection * 7;
+  Body.LinearVelocity := DirectionToBreakApart * 5 + HitDirection * 7;
 
   Collider := TBoxCollider.Create(Body);
   Collider.Size := Enemy.LocalBoundingBox.Size;
@@ -356,9 +356,9 @@ procedure TEnemies.TryEnemySpawn;
   begin
     for I := 0 to SearchSpawnPositionTries - 1 do
     begin
-      Pos := SceneManager.WalkNavigation.Position;
+      Pos := SceneManager.Camera.Position;
       Dir := SceneManager.WalkNavigation.DirectionInGravityPlane;
-      Side := TVector3.CrossProduct(Dir, SceneManager.GravityUp);
+      Side := TVector3.CrossProduct(Dir, SceneManager.Camera.GravityUp);
 
       Pos := Pos +
         Dir * RandomFloatRange(2, 10) +
@@ -382,10 +382,10 @@ begin
     Enemy.Translation := Pos;
 
     { make the enemy face player }
-    Dir := SceneManager.WalkNavigation.Position - Pos;
-    if not VectorsParallel(Dir, SceneManager.GravityUp) then
+    Dir := SceneManager.Camera.Position - Pos;
+    if not VectorsParallel(Dir, SceneManager.Camera.GravityUp) then
     begin
-      MakeVectorsOrthoOnTheirPlane(Dir, SceneManager.GravityUp);
+      MakeVectorsOrthoOnTheirPlane(Dir, SceneManager.Camera.GravityUp);
       Enemy.Direction := Dir;
     end;
 

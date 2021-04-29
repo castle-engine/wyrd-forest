@@ -22,7 +22,7 @@ uses SysUtils, Classes,
   CastleWindowTouch, CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
   CastleUIControls, CastleTerrain, CastleUIState, CastleSceneManager,
-  CastleCameras, X3DNodes, X3DFields, CastleRendererBaseTypes,
+  CastleCameras, X3DNodes, X3DFields, CastleRenderOptions,
   CastleTransform, CastleVectors, CastleTriangles, CastleTimeUtils,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications,
   GameTerrain, GameEnemies;
@@ -83,14 +83,14 @@ begin
   InsertBack(SceneManager);
 
   SceneManager.NavigationType := ntWalk;
-  SceneManager.WalkCamera.PreferredHeight := 2;
-  SceneManager.WalkCamera.MoveSpeed := 10;
+  SceneManager.WalkNavigation.PreferredHeight := 2;
+  SceneManager.WalkNavigation.MoveSpeed := 10;
 
   EnvironmentScene := TCastleScene.Create(FreeAtStop);
   EnvironmentScene.Load('castle-data:/environment/environment.x3dv');
   EnvironmentScene.ProcessEvents := true;
   SceneManager.Items.Add(EnvironmentScene);
-  SceneManager.MainScene := EnvironmentScene;
+  SceneManager.Items.MainScene := EnvironmentScene;
 
   Enemies := TEnemies.Create(FreeAtStop);
   Enemies.SceneManager := SceneManager;
@@ -153,7 +153,7 @@ begin
   Terrain.CreateScene;
   Terrain.AddSlidersToMenu(OnScreenMenu);
 
-  SceneManager.WalkCamera.SetView(
+  SceneManager.Camera.SetView(
     { Experimentally chosen sensible default position: }
     Vector3(20.51, 0, 12.68),
 
@@ -171,7 +171,7 @@ begin
   FixCamera; // fix SceneManager.WalkCamera.Position.Y
 
   // disable dragging, sometimes collides with OnScreenMenu usage
-  SceneManager.WalkCamera.Input := SceneManager.WalkCamera.Input - [ciMouseDragging];
+  SceneManager.WalkNavigation.Input := SceneManager.WalkNavigation.Input - [niMouseDragging];
 end;
 
 function TStatePlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
@@ -192,15 +192,15 @@ var
   P: TVector3;
   Y: Single;
 begin
-  P := SceneManager.WalkCamera.Position;
+  P := SceneManager.Camera.Position;
   if HeightAboveTerrain(P, Y) then
   begin
     P.Y := Y + 2;
-    SceneManager.WalkCamera.Position := P;
+    SceneManager.Camera.Position := P;
   end else
   begin
     WritelnLog('Camera stands outside of terrain, fixing');
-    SceneManager.WalkCamera.Position := SceneManager.Items.BoundingBox.Center;
+    SceneManager.Camera.Position := SceneManager.Items.BoundingBox.Center;
     FixCamera;
   end;
 end;
@@ -255,7 +255,7 @@ begin
     '[F10] Toggle controls to tweak display' +NL+
     '[Escape] Back to main menu',
     [Container.Fps.ToString,
-     SceneManager.WalkCamera.MoveSpeed,
+     SceneManager.WalkNavigation.MoveSpeed,
      HitUnderMouse]);
 end;
 
@@ -303,7 +303,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Scene.Direction := Dir;
 
     Body := TRigidBody.Create(Self);
-    Body.InitialLinearVelocity := Dir * 4;
+    Body.LinearVelocity := Dir * 4;
     Body.Dynamic := true;
 
     Collider := TBoxCollider.Create(Body);
@@ -351,7 +351,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Result := EnemyUnderMouse(Enemy, Point, Triangle);
     if Result then
     begin
-      Enemy.Hit(Point, Triangle^, SceneManager.WalkCamera.Direction);
+      Enemy.Hit(Point, Triangle^, SceneManager.Camera.Direction);
 
       { advance tutorial }
       if TutorialState = tsShootEnemy then
@@ -368,15 +368,15 @@ begin
   Result := inherited;
   if Result then Exit;
 
-  if Event.IsMouseButton(mbLeft) then
+  if Event.IsMouseButton(buttonLeft) then
   begin
     if not TryShootEnemy then HitNotification;
     Result := true;
   end;
 
-  if Event.IsMouseButton(mbRight) then
+  if Event.IsMouseButton(buttonRight) then
   begin
-    if Container.Pressed.Keys[K_Ctrl] then
+    if Container.Pressed.Keys[keyCtrl] then
     begin
       SpawnPhysicsBox;
     end else
@@ -386,14 +386,14 @@ begin
     Result := true;
   end;
 
-  if Event.IsKey(K_F4) then
+  if Event.IsKey(keyF4) then
   begin
-    SceneManager.WalkCamera.MouseLook := not SceneManager.WalkCamera.MouseLook;
-    Crosshair.Exists := SceneManager.WalkCamera.MouseLook;
+    SceneManager.WalkNavigation.MouseLook := not SceneManager.WalkNavigation.MouseLook;
+    Crosshair.Exists := SceneManager.WalkNavigation.MouseLook;
     Result := true;
   end;
 
-  if Event.IsKey(K_F5) then
+  if Event.IsKey(keyF5) then
   begin
     S := FileNameAutoInc('wyrd_forest_screen_%d.png');
     Container.SaveScreen(S);
@@ -401,7 +401,7 @@ begin
     Result := true;
   end;
 
-  if Event.IsKey(K_F6) then
+  if Event.IsKey(keyF6) then
   begin
     S := FileNameAutoInc('terrain_%d.x3dv');
     Terrain.Scene.Save(S);
@@ -409,13 +409,13 @@ begin
     Result := true;
   end;
 
-  if Event.IsKey(K_F10) then
+  if Event.IsKey(keyF10) then
   begin
     OnScreenMenu.Exists := not OnScreenMenu.Exists;
     Result := true;
   end;
 
-  if Event.IsKey(K_Escape) then
+  if Event.IsKey(keyEscape) then
   begin
     TUIState.Current := StateMainMenu;
     Result := true;

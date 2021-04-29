@@ -110,7 +110,7 @@ begin
   Result := inherited;
   if Result then Exit;
 
-  if Event.IsKey(K_Enter) then
+  if Event.IsKey(keyEnter) then
     PlayClick(nil);
 end;
 

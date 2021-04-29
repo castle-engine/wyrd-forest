@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project name="wyrd-forest"
-  standalone_source="code/wyrd_forest_standalone.lpr"
+  standalone_source="wyrd_forest_standalone.lpr"
   game_units="GameInitialize"
   qualified_name="io.castleengine.wyrd.forest"
 >

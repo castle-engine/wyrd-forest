@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2017 Michalis Kamburelis.
+  Copyright 2017-2021 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -25,8 +25,13 @@ uses SysUtils, Classes,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
   CastleUIControls, CastleUIState, CastleSceneManager,
   CastleTransform, CastleVectors, CastleImages, CastleApplicationProperties,
-  CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications,
-  GameStatePlay, GameStateLoading, GameStateMainMenu;
+  CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications
+  {$region 'Castle Initialization Uses'}
+  // The content here may be automatically updated by CGE editor.
+  , GameStatePlay
+  , GameStateLoading
+  , GameStateMainMenu
+  {$endregion 'Castle Initialization Uses'};
 
 { application routines ------------------------------------------------------- }
 
@@ -36,35 +41,31 @@ var
 { One-time initialization of resources. }
 procedure ApplicationInitialize;
 begin
-  { For a scalable UI (adjusts to any window size in a smart way), use UIScaling }
-  Window.Container.UIReferenceWidth := 1024;
-  Window.Container.UIReferenceHeight := 768;
-  Window.Container.UIScaling := usEncloseReferenceSize;
+  { Adjust container settings for a scalable UI (adjusts to any window size in a smart way). }
+  Window.Container.LoadSettings('castle-data:/CastleSettings.xml');
 
   { customize TCastleLabel with TCastleLabel.Frame=true look }
-  Theme.Images[tiLabel] := LoadImage('castle-data:/gui/transparent_pixel.png');
-  Theme.OwnsImages[tiLabel] := true;
-  Theme.Corners[tiLabel] := Vector4(0, 0, 0, 0);
+  Theme.ImagesPersistent[tiLabel].Url := 'castle-data:/gui/transparent_pixel.png';
+  Theme.ImagesPersistent[tiLabel].ProtectedSides.AllSides := 0;
 
-  { create TUIState instances }
+  { Create game states and set initial state }
+  {$region 'Castle State Creation'}
+  // The content here may be automatically updated by CGE editor.
   StateMainMenu := TStateMainMenu.Create(Application);
   StatePlay := TStatePlay.Create(Application);
   StateLoading := TStateLoading.Create(Application);
+  {$endregion 'Castle State Creation'}
 
   { set current state }
   TUIState.Current := StateMainMenu;
 end;
 
 initialization
-  { Set ApplicationName early, as our log uses it. }
-  ApplicationProperties.ApplicationName := 'wyrd-forest';
-
-  InitializeLog;
-
   { initialize Application callbacks }
   Application.OnInitialize := @ApplicationInitialize;
 
   { create Window and initialize Window callbacks }
   Window := TCastleWindowBase.Create(Application);
+  Window.ParseParameters; // allows to control window size / fullscreen on the command-line
   Application.MainWindow := Window;
 end.

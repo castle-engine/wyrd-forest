@@ -18,7 +18,7 @@ unit GameSpawned;
 
 interface
 
-uses CastleTransform, CastleScene, CastleVectors, X3DFields, X3DTime;
+uses CastleTransform, CastleSceneCore, CastleScene, CastleVectors, X3DNodes;
 
 type
   { Common logic of something that can be spawned,
@@ -29,8 +29,7 @@ type
       NextId: Integer;
     var
       Scene: TCastleScene;
-    procedure SpawnIsActiveChanged(
-      Event: TX3DEvent; Value: TX3DField; const Time: TX3DTime);
+    procedure SpawnStopped(const AScene: TCastleSceneCore; const Animation: TTimeSensorNode);
   protected
     procedure SpawnEnded; virtual;
   public
@@ -40,12 +39,12 @@ type
 implementation
 
 uses SysUtils,
-  X3DNodes, CastleLog, CastleSceneCore;
+  CastleLog;
 
 procedure TSpawned.Spawn(const SceneTemplate: TCastleScene);
 var
-  TimeSensor: TTimeSensorNode;
-  SceneName: string;
+  SceneName: String;
+  PlayParams: TPlayAnimationParameters;
 begin
   Scene := SceneTemplate.Clone(Self);
   Scene.ProcessEvents := true;
@@ -65,22 +64,17 @@ begin
   Inc(NextId);
   Scene.Name := SceneName; // assign unique name, for nicer debugging
 
-  Scene.PlayAnimation('spawn', false);
-  TimeSensor := Scene.AnimationTimeSensor('spawn');
-  if TimeSensor = nil then
-    WritelnWarning('Missing TimeSensor for animation "spawn"')
-  else
-    TimeSensor.EventIsActive.AddNotification(@SpawnIsActiveChanged);
+  PlayParams := TPlayAnimationParameters.Create;
+  try
+    PlayParams.Name := 'spawn';
+    PlayParams.StopNotification := @SpawnStopped;
+    Scene.PlayAnimation(PlayParams);
+  finally FreeAndNil(PlayParams) end;
 end;
 
-procedure TSpawned.SpawnIsActiveChanged(
-  Event: TX3DEvent; Value: TX3DField; const Time: TX3DTime);
-var
-  Val: boolean;
+procedure TSpawned.SpawnStopped(const AScene: TCastleSceneCore; const Animation: TTimeSensorNode);
 begin
-  Val := (Value as TSFBool).Value;
-  if not Val then
-    SpawnEnded;
+  SpawnEnded;
 end;
 
 procedure TSpawned.SpawnEnded;

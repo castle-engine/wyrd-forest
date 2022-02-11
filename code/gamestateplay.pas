@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2017 Michalis Kamburelis.
+  Copyright 2017-2022 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -19,7 +19,7 @@ unit GameStatePlay;
 interface
 
 uses SysUtils, Classes,
-  CastleWindowTouch, CastleWindow, CastleScene, CastleControls, CastleLog,
+  CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
   CastleUIControls, CastleTerrain, CastleUIState, CastleSceneManager,
   CastleCameras, X3DNodes, X3DFields, CastleRenderOptions,

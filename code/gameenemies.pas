@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2017 Michalis Kamburelis.
+  Copyright 2017-2022 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -32,7 +32,7 @@ type
     const
       { These values reflect the position/size of the shooting target on
         ../data/evil_squirrel/evil-squirrel.png . }
-      TargetCenter: TVector2 = (Data: (417 / 1024, 1 - 717 / 1024));
+      TargetCenter: TVector2 = (X: 417 / 1024; Y: 1 - 717 / 1024);
       TargetRadius = 194 / 1024;
       TargetBullseyeRadius = 10 / 1024;
     var
@@ -232,15 +232,15 @@ procedure TEnemy.SplitIntoParts(const HitCoord: TVector2; const HitDirection: TV
   var
     Min12: Integer;
   begin
-    Min12 := Iff(V.Data[1] < V.Data[2], 1, 2);
-    if V.Data[0] > V.Data[Min12] then
-      SwapValues(V.Data[0], V.Data[Min12]);
+    Min12 := Iff(V.Y < V.Z, 1, 2);
+    if V.X > V.Data[Min12] then
+      SwapValues(V.X, V.Data[Min12]);
 
-    // now V.Data[0] is done, it is the smallest one
-    Assert(V.Data[0] <= V.Data[1]);
-    Assert(V.Data[0] <= V.Data[2]);
+    // now V.X is done, it is the smallest one
+    Assert(V.X <= V.Y);
+    Assert(V.X <= V.Z);
 
-    OrderUp(V.Data[1], V.Data[2]);
+    OrderUp(V.Y, V.Z);
   end;
   *)
 
@@ -249,17 +249,17 @@ var
   I: Integer;
   Part: TEnemyDestroyedPart;
 begin
-  // ClipPlaneAngles[0] := RandomFloatRange(-Pi, Pi);
-  // ClipPlaneAngles[1] := RandomFloatRange(-Pi, Pi);
-  // ClipPlaneAngles[2] := RandomFloatRange(-Pi, Pi);
+  // ClipPlaneAngles.X := RandomFloatRange(-Pi, Pi);
+  // ClipPlaneAngles.Y := RandomFloatRange(-Pi, Pi);
+  // ClipPlaneAngles.Z := RandomFloatRange(-Pi, Pi);
   // SortVector(ClipPlaneAngles);
 
   { initially I experimented with more random ClipPlaneAngles,
     but the below approach looks better.
     Also, it doesn't require SortVector call. }
-  ClipPlaneAngles[0] := RandomFloatRange(-Pi          , -Pi / 3 - 0.2);
-  ClipPlaneAngles[1] := RandomFloatRange(-Pi / 3 + 0.2,  Pi / 3 - 0.2);
-  ClipPlaneAngles[2] := RandomFloatRange( Pi / 3 + 0.2,  Pi);
+  ClipPlaneAngles.X := RandomFloatRange(-Pi          , -Pi / 3 - 0.2);
+  ClipPlaneAngles.Y := RandomFloatRange(-Pi / 3 + 0.2,  Pi / 3 - 0.2);
+  ClipPlaneAngles.Z := RandomFloatRange( Pi / 3 + 0.2,  Pi);
 
   for I := 0 to 2 do
   begin

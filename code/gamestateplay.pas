@@ -21,7 +21,7 @@ interface
 uses SysUtils, Classes,
   CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
-  CastleUIControls, CastleTerrain, CastleUIState, CastleSceneManager,
+  CastleUIControls, CastleTerrain, CastleUIState, CastleViewport,
   CastleCameras, X3DNodes, X3DFields, CastleRenderOptions,
   CastleTransform, CastleVectors, CastleTriangles, CastleTimeUtils,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications,
@@ -37,7 +37,8 @@ type
     OnScreenMenu: TCastleOnScreenMenu;
     Terrain: TTerrain;
     Notifications: TCastleNotifications;
-    SceneManager: TCastleSceneManager;
+    Viewport: TCastleViewport;
+    Navigation: TCastleWalkNavigation;
     TreeTemplate: TCastleScene;
     Trees: TCastleTransform;
     Enemies: TEnemies;
@@ -50,10 +51,10 @@ type
       Returns @false is this is not over terrain (maybe outside terrain,
       maybe over another tree or enemy). }
     function HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
-    { Fix SceneManager camera position to stand on ground }
+    { Fix Viewport camera position to stand on ground }
     procedure FixCamera;
     { Determine Enemy and exact hit point and triangle,
-      looking at SceneManager.MouseRayHit. }
+      looking at Viewport.MouseRayHit. }
     function EnemyUnderMouse(
       out Enemy: TEnemy; out Point: TVector3; out Triangle: PTriangle): boolean;
   public
@@ -79,33 +80,36 @@ var
 begin
   inherited;
 
-  SceneManager := TCastleSceneManager.Create(FreeAtStop);
-  InsertBack(SceneManager);
+  Viewport := TCastleViewport.Create(FreeAtStop);
+  Viewport.FullSize := true;
+  InsertBack(Viewport);
 
-  SceneManager.NavigationType := ntWalk;
-  SceneManager.WalkNavigation.PreferredHeight := 2;
-  SceneManager.WalkNavigation.MoveSpeed := 10;
+  Navigation := TCastleWalkNavigation.Create(FreeAtStop);
+  Navigation.PreferredHeight := 2;
+  Navigation.MoveSpeed := 10;
+  Viewport.InsertFront(Navigation);
 
   EnvironmentScene := TCastleScene.Create(FreeAtStop);
   EnvironmentScene.Load('castle-data:/environment/environment.x3dv');
   EnvironmentScene.ProcessEvents := true;
-  SceneManager.Items.Add(EnvironmentScene);
-  SceneManager.Items.MainScene := EnvironmentScene;
+  Viewport.Items.Add(EnvironmentScene);
+  Viewport.Items.MainScene := EnvironmentScene;
 
   Enemies := TEnemies.Create(FreeAtStop);
-  Enemies.SceneManager := SceneManager;
+  Enemies.Viewport := Viewport;
+  Enemies.Navigation := Navigation;
   Enemies.OnHeightAboveTerrain := @HeightAboveTerrain;
   Enemies.Prepare;
-  SceneManager.Items.Add(Enemies);
+  Viewport.Items.Add(Enemies);
 
   TreeTemplate := TCastleScene.Create(FreeAtStop);
   TreeTemplate.Name := 'Tree'; // for nicer debugging
   TreeTemplate.Load('castle-data:/tree/oaktree_with_good_collisions.x3dv');
   { Prepare resources, to render faster when the game starts. }
-  SceneManager.PrepareResources(TreeTemplate);
+  Viewport.PrepareResources(TreeTemplate);
 
   Trees := TCastleTransform.Create(FreeAtStop);
-  SceneManager.Items.Add(Trees);
+  Viewport.Items.Add(Trees);
 
   OnScreenMenu := TCastleOnScreenMenu.Create(FreeAtStop);
   OnScreenMenu.Exists := false;
@@ -148,12 +152,12 @@ begin
   InsertFront(Crosshair);
 
   Terrain := TTerrain.Create(FreeAtStop, InitialGridCount);
-  Terrain.SceneManager := SceneManager;
+  Terrain.Viewport := Viewport;
   Terrain.OnFixCamera := @FixCamera;
   Terrain.CreateScene;
   Terrain.AddSlidersToMenu(OnScreenMenu);
 
-  SceneManager.Camera.SetView(
+  Viewport.Camera.SetView(
     { Experimentally chosen sensible default position: }
     Vector3(20.51, 0, 12.68),
 
@@ -162,16 +166,16 @@ begin
       and fix camera to stand in the middle anyway
       (with message "Camera stands outside of terrain, fixing" in log).
       But doing it explicitly feels cleaner. }
-    //SceneManager.Items.BoundingBox.Center,
+    //Viewport.Items.BoundingBox.Center,
 
     // Look in the direction that shrinks / grows when you change GridCount.
     Vector3(1, 0, 1),
     Vector3(0, 1, 0)
   );
-  FixCamera; // fix SceneManager.WalkCamera.Position.Y
+  FixCamera; // fix Viewport.WalkCamera.Position.Y
 
   // disable dragging, sometimes collides with OnScreenMenu usage
-  SceneManager.WalkNavigation.Input := SceneManager.WalkNavigation.Input - [niMouseDragging];
+  Navigation.Input := Navigation.Input - [niMouseDragging];
 end;
 
 function TStatePlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
@@ -179,7 +183,7 @@ var
   RayCollision: TRayCollision;
 begin
   Pos.Y := 1000 * 1000;
-  RayCollision := SceneManager.Items.WorldRay(Pos, Vector3(0, -1, 0));
+  RayCollision := Viewport.Items.WorldRay(Pos, Vector3(0, -1, 0));
   try
     Result := (RayCollision <> nil) and (RayCollision[0].Item = Terrain.Scene);
     if Result then
@@ -192,15 +196,15 @@ var
   P: TVector3;
   Y: Single;
 begin
-  P := SceneManager.Camera.Position;
+  P := Viewport.Camera.Translation;
   if HeightAboveTerrain(P, Y) then
   begin
     P.Y := Y + 2;
-    SceneManager.Camera.Position := P;
+    Viewport.Camera.Translation := P;
   end else
   begin
     WritelnLog('Camera stands outside of terrain, fixing');
-    SceneManager.Camera.Position := SceneManager.Items.BoundingBox.Center;
+    Viewport.Camera.Translation := Viewport.Items.BoundingBox.Center;
     FixCamera;
   end;
 end;
@@ -212,14 +216,14 @@ var
 begin
   Result := false;
 
-  if SceneManager.MouseRayHit <> nil then
+  if Viewport.MouseRayHit <> nil then
   begin
-    EnemyIndex := SceneManager.MouseRayHit.IndexOfItem(TEnemy);
+    EnemyIndex := Viewport.MouseRayHit.IndexOfItem(TEnemy);
     if EnemyIndex <> -1 then
     begin
-      Enemy := SceneManager.MouseRayHit[EnemyIndex].Item as TEnemy;
-      Point := SceneManager.MouseRayHit[0].Point;
-      Triangle := SceneManager.MouseRayHit[0].Triangle;
+      Enemy := Viewport.MouseRayHit[EnemyIndex].Item as TEnemy;
+      Point := Viewport.MouseRayHit[0].Point;
+      Triangle := Viewport.MouseRayHit[0].Triangle;
       if Enemy.Idle and (Triangle <> nil) then
         Result := true;
     end;
@@ -255,7 +259,7 @@ begin
     '[F10] Toggle controls to tweak display' +NL+
     '[Escape] Back to main menu',
     [Container.Fps.ToString,
-     SceneManager.WalkNavigation.MoveSpeed,
+     Navigation.MoveSpeed,
      HitUnderMouse]);
 end;
 
@@ -265,11 +269,11 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
   var
     ItemHit: TCastleTransform;
   begin
-    if SceneManager.MouseRayHit = nil then
+    if Viewport.MouseRayHit = nil then
       Notifications.Show('Nothing hit')
     else
     begin
-      ItemHit := SceneManager.MouseRayHit[0].Item;
+      ItemHit := Viewport.MouseRayHit[0].Item;
       Notifications.Show('Hit ' + ItemHit.Name + ' ' + ItemHit.ClassName);
     end;
   end;
@@ -295,10 +299,10 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Root := TX3DRootNode.Create;
     Root.AddChildren(Shape);
 
-    Scene := TCastleScene.Create(SceneManager);
+    Scene := TCastleScene.Create(Viewport);
     Scene.Load(Root, true);
 
-    SceneManager.Camera.GetView(Pos, Dir, Up);
+    Viewport.Camera.GetView(Pos, Dir, Up);
     Scene.Translation := Pos + Dir * 2;
     Scene.Direction := Dir;
 
@@ -312,7 +316,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Collider.Density := 100.0;
     Scene.RigidBody := Body;
 
-    SceneManager.Items.Add(Scene);
+    Viewport.Items.Add(Scene);
   end;
 
   function TrySpawnTree: boolean;
@@ -322,12 +326,12 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
   begin
     Result := false;
 
-    if (SceneManager.MouseRayHit <> nil) and
-       (SceneManager.MouseRayHit[0].Item = Terrain.Scene) then
+    if (Viewport.MouseRayHit <> nil) and
+       (Viewport.MouseRayHit[0].Item = Terrain.Scene) then
     begin
       Result := true;
 
-      Pos := SceneManager.MouseRayHit[0].Point;
+      Pos := Viewport.MouseRayHit[0].Point;
       Tree := TSpawned.Create(Self);
       Tree.Spawn(TreeTemplate);
       Tree.Translation := Pos;
@@ -351,7 +355,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Result := EnemyUnderMouse(Enemy, Point, Triangle);
     if Result then
     begin
-      Enemy.Hit(Point, Triangle^, SceneManager.Camera.Direction);
+      Enemy.Hit(Point, Triangle^, Viewport.Camera.Direction);
 
       { advance tutorial }
       if TutorialState = tsShootEnemy then
@@ -388,8 +392,8 @@ begin
 
   if Event.IsKey(keyF4) then
   begin
-    SceneManager.WalkNavigation.MouseLook := not SceneManager.WalkNavigation.MouseLook;
-    Crosshair.Exists := SceneManager.WalkNavigation.MouseLook;
+    Navigation.MouseLook := not Navigation.MouseLook;
+    Crosshair.Exists := Navigation.MouseLook;
     Result := true;
   end;
 

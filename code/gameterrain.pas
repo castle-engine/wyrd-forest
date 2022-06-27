@@ -21,7 +21,7 @@ interface
 uses SysUtils, Classes,
   CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
-  CastleUIControls, CastleTerrain, CastleUIState, CastleSceneManager,
+  CastleUIControls, CastleTerrain, CastleUIState, CastleViewport,
   CastleCameras, X3DNodes, X3DFields, CastleRendererBaseTypes,
   CastleTransform, CastleVectors, CastleTriangles, CastleRectangles,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications;
@@ -54,7 +54,7 @@ type
     procedure UpdateScene(Sender: TObject);
     procedure UpdateShader(Sender: TObject);
   public
-    SceneManager: TCastleSceneManager;
+    Viewport: TCastleViewport;
     OnFixCamera: TFixCameraEvent;
     constructor Create(AOwner: TComponent; const InitialGridCount: Cardinal); reintroduce;
     procedure AddSlidersToMenu(OnScreenMenu: TCastleOnScreenMenu);
@@ -100,7 +100,7 @@ begin
   { we change uniforms through OnScreenMenu, so the scene should react to events }
   Scene.ProcessEvents := true;
   Scene.Name := 'TerrainScene'; // for nicer debugging
-  SceneManager.Items.Add(Scene);
+  Viewport.Items.Add(Scene);
 
   UpdateScene(nil);
 end;
@@ -277,9 +277,9 @@ begin
   OnFixCamera;
 
   // make gravity work even if your position is over the world bbox
-  MoveLimit := SceneManager.Items.BoundingBox;
+  MoveLimit := Viewport.Items.BoundingBox;
   MoveLimit.Max := MoveLimit.Max + Vector3(0, 1000, 0);
-  SceneManager.MoveLimit := MoveLimit;
+  Viewport.Items.MoveLimit := MoveLimit;
 
   Scene.RigidBody.Free;
   Scene.RigidBody := CreateRigidBody;

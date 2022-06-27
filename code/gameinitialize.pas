@@ -23,7 +23,7 @@ implementation
 uses SysUtils, Classes,
   CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
-  CastleUIControls, CastleUIState, CastleSceneManager,
+  CastleUIControls, CastleUIState, CastleViewport,
   CastleTransform, CastleVectors, CastleImages, CastleApplicationProperties,
   CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications
   {$region 'Castle Initialization Uses'}

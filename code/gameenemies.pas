@@ -19,8 +19,8 @@ unit GameEnemies;
 interface
 
 uses Classes,
-  CastleVectors, CastleTransform, CastleTimeUtils, CastleScene, CastleSceneManager,
-  CastleTriangles,
+  CastleVectors, CastleTransform, CastleTimeUtils, CastleScene, CastleViewport,
+  CastleTriangles, CastleCameras,
   GameSpawned;
 
 type
@@ -54,7 +54,7 @@ type
   end;
 
   { Enemies list. It is a TCastleTransform descendant, and it should
-    also be added to the SceneManager.Items.
+    also be added to the Viewport.Items.
     It automatically takes care of spawning the enemies. }
   TEnemies = class(TCastleTransform)
   private
@@ -64,11 +64,12 @@ type
     EnemyDestroyedPartTemplate: TCastleScene;
     procedure TryEnemySpawn;
   public
-    SceneManager: TCastleSceneManager;
+    Viewport: TCastleViewport;
+    Navigation: TCastleWalkNavigation;
     OnHeightAboveTerrain: THeightAboveTerrainEvent;
     constructor Create(AOwner: TComponent); override;
     procedure Update(const SecondsPassed: Single; var RemoveMe: TRemoveType); override;
-    { Prepare resources using SceneManager, to render faster when the game starts. }
+    { Prepare resources using Viewport, to render faster when the game starts. }
     procedure Prepare;
   end;
 
@@ -307,9 +308,9 @@ end;
 
 procedure TEnemies.Prepare;
 begin
-  SceneManager.PrepareResources(EnemySpawnTemplate);
-  SceneManager.PrepareResources(EnemyIdleTemplate);
-  SceneManager.PrepareResources(EnemyDestroyedPartTemplate);
+  Viewport.PrepareResources(EnemySpawnTemplate);
+  Viewport.PrepareResources(EnemyIdleTemplate);
+  Viewport.PrepareResources(EnemyDestroyedPartTemplate);
 end;
 
 procedure TEnemies.TryEnemySpawn;
@@ -356,9 +357,9 @@ procedure TEnemies.TryEnemySpawn;
   begin
     for I := 0 to SearchSpawnPositionTries - 1 do
     begin
-      Pos := SceneManager.Camera.Position;
-      Dir := SceneManager.WalkNavigation.DirectionInGravityPlane;
-      Side := TVector3.CrossProduct(Dir, SceneManager.Camera.GravityUp);
+      Pos := Viewport.Camera.Position;
+      Dir := Navigation.DirectionInGravityPlane;
+      Side := TVector3.CrossProduct(Dir, Viewport.Camera.GravityUp);
 
       Pos := Pos +
         Dir * RandomFloatRange(2, 10) +
@@ -382,10 +383,10 @@ begin
     Enemy.Translation := Pos;
 
     { make the enemy face player }
-    Dir := SceneManager.Camera.Position - Pos;
-    if not VectorsParallel(Dir, SceneManager.Camera.GravityUp) then
+    Dir := Viewport.Camera.Position - Pos;
+    if not VectorsParallel(Dir, Viewport.Camera.GravityUp) then
     begin
-      MakeVectorsOrthoOnTheirPlane(Dir, SceneManager.Camera.GravityUp);
+      MakeVectorsOrthoOnTheirPlane(Dir, Viewport.Camera.GravityUp);
       Enemy.Direction := Dir;
     end;
 

@@ -24,7 +24,7 @@ uses SysUtils, Classes,
   CastleUIControls, CastleTerrain, CastleUIState, CastleViewport,
   CastleCameras, X3DNodes, X3DFields, CastleRenderOptions,
   CastleTransform, CastleVectors, CastleTriangles, CastleTimeUtils,
-  CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications,
+  CastleUtils, CastleBoxes, CastleNotifications,
   GameTerrain, GameEnemies;
 
 type
@@ -34,8 +34,7 @@ type
   TStatePlay = class(TUIState)
   strict private
     Status: TCastleLabel;
-    OnScreenMenu: TCastleOnScreenMenu;
-    Terrain: TTerrain;
+    MyTerrain: TMyTerrain;
     Notifications: TCastleNotifications;
     Viewport: TCastleViewport;
     Navigation: TCastleWalkNavigation;
@@ -111,13 +110,6 @@ begin
   Trees := TCastleTransform.Create(FreeAtStop);
   Viewport.Items.Add(Trees);
 
-  OnScreenMenu := TCastleOnScreenMenu.Create(FreeAtStop);
-  OnScreenMenu.Exists := false;
-  OnScreenMenu.Anchor(hpRight, -10);
-  OnScreenMenu.Anchor(vpBottom, 10);
-  OnScreenMenu.RegularSpaceBetweenItems := 4;
-  InsertFront(OnScreenMenu);
-
   Notifications := TCastleNotifications.Create(Owner);
   Notifications.Anchor(hpMiddle);
   Notifications.Anchor(vpBottom, 10);
@@ -151,11 +143,11 @@ begin
   Crosshair.Exists := false; // synchronized with Camera.MouseLook
   InsertFront(Crosshair);
 
-  Terrain := TTerrain.Create(FreeAtStop, InitialGridCount);
-  Terrain.Viewport := Viewport;
-  Terrain.OnFixCamera := @FixCamera;
-  Terrain.CreateScene;
-  Terrain.AddSlidersToMenu(OnScreenMenu);
+  MyTerrain := TMyTerrain.Create(FreeAtStop);
+  MyTerrain.Viewport := Viewport;
+  MyTerrain.OnFixCamera := @FixCamera;
+  MyTerrain.InitialGridCount := InitialGridCount;
+  MyTerrain.Initialize;
 
   Viewport.Camera.SetView(
     { Experimentally chosen sensible default position: }
@@ -173,9 +165,6 @@ begin
     Vector3(0, 1, 0)
   );
   FixCamera; // fix Viewport.WalkCamera.Position.Y
-
-  // disable dragging, sometimes collides with OnScreenMenu usage
-  Navigation.Input := Navigation.Input - [niMouseDragging];
 end;
 
 function TStatePlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
@@ -185,7 +174,10 @@ begin
   Pos.Y := 1000 * 1000;
   RayCollision := Viewport.Items.WorldRay(Pos, Vector3(0, -1, 0));
   try
-    Result := (RayCollision <> nil) and (RayCollision[0].Item = Terrain.Scene);
+    Result :=
+      (RayCollision <> nil) and
+      (RayCollision.Count >= 2) and
+      (RayCollision[1].Item = MyTerrain.Terrain);
     if Result then
       Y := RayCollision[0].Point.Y;
   finally FreeAndNil(RayCollision) end;
@@ -255,8 +247,6 @@ begin
     '[ctrl + right click] shoot test physics box' + NL +
     '[F4] Toggle mouse look' +NL+
     '[F5] Screenshot' +NL+
-    '[F6] Save terrain to X3D file' +NL+
-    '[F10] Toggle controls to tweak display' +NL+
     '[Escape] Back to main menu',
     [Container.Fps.ToString,
      Navigation.MoveSpeed,
@@ -327,7 +317,8 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Result := false;
 
     if (Viewport.MouseRayHit <> nil) and
-       (Viewport.MouseRayHit[0].Item = Terrain.Scene) then
+       (Viewport.MouseRayHit.Count >= 2) and
+       (Viewport.MouseRayHit[1].Item = MyTerrain.Terrain) then
     begin
       Result := true;
 
@@ -399,23 +390,8 @@ begin
 
   if Event.IsKey(keyF5) then
   begin
-    S := FileNameAutoInc('wyrd_forest_screen_%d.png');
-    Container.SaveScreen(S);
+    S := Container.SaveScreenToDefaultFile;
     Notifications.Show('Saved screen to ' + S);
-    Result := true;
-  end;
-
-  if Event.IsKey(keyF6) then
-  begin
-    S := FileNameAutoInc('terrain_%d.x3dv');
-    Terrain.Scene.Save(S);
-    Notifications.Show('Saved terrain 3D model to ' + S);
-    Result := true;
-  end;
-
-  if Event.IsKey(keyF10) then
-  begin
-    OnScreenMenu.Exists := not OnScreenMenu.Exists;
     Result := true;
   end;
 

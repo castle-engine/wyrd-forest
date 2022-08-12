@@ -4,7 +4,7 @@ uniform vec2 hitPoint;
 uniform vec3 clipPlaneAngles;
 uniform int part;
 
-void PLUG_texture_apply(inout vec4 fragment_color, const in vec3 normal_eye)
+void PLUG_main_texture_apply(inout vec4 fragment_color, const in vec3 normal_eye)
 {
   vec2 xy = castle_TexCoord0.xy - hitPoint;
   float a = atan(xy.y, xy.x);

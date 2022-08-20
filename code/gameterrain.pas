@@ -95,8 +95,6 @@ begin
   FTerrain.UvScale2 := 0.26;
   FTerrain.UvScale3 := 0.36;
   FTerrain.TextureMix := 1;
-  FTerrain.NormalDark := 0.94;
-  FTerrain.NormalDarkening := 0.3;
   FTerrain.Data := TerrainNoise;
 
   { User controls Size only implicitly, by GridCount,

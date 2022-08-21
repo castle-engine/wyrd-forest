@@ -81,20 +81,17 @@ begin
   GridStep := 0.57;
 
   FTerrain := TCastleTerrain.Create(Self);
-  FTerrain.Subdivisions := GridCount;
+  FTerrain.Subdivisions := Vector2(GridCount, GridCount);
   FTerrain.PreciseCollisions := true;
   FTerrain.Name := 'FTerrain';
-  FTerrain.Texture1 := 'castle-data:/terrain/textures/island_sand2_d.jpg';
-  FTerrain.Texture2 := 'castle-data:/terrain/textures/ground_mud2_d.jpg';
-  FTerrain.Texture3 := 'castle-data:/terrain/textures/mntn_white_d.jpg';
-  FTerrain.Height0 := 0.42;
-  FTerrain.Height1 := 1.94;
-  FTerrain.Height2 := 5;
-  FTerrain.Height3 := 10;
-  FTerrain.UvScale1 := 0.11;
-  FTerrain.UvScale2 := 0.26;
-  FTerrain.UvScale3 := 0.36;
-  FTerrain.TextureMix := 1;
+  FTerrain.Layer1.Texture := 'castle-data:/terrain/textures/island_sand2_d.jpg';
+  FTerrain.Layer2.Texture := 'castle-data:/terrain/textures/ground_mud2_d.jpg';
+  FTerrain.Layer3.Texture := 'castle-data:/terrain/textures/mntn_white_d.jpg';
+  FTerrain.Layer4.Texture := 'castle-data:/terrain/textures/snow_mud_d.jpg';
+  FTerrain.Layer1.UvScale := 0.11;
+  FTerrain.Layer2.UvScale := 0.26;
+  FTerrain.Layer3.UvScale := 0.36;
+  FTerrain.Layer4.UvScale := 0.36;
   FTerrain.Data := TerrainNoise;
 
   { User controls Size only implicitly, by GridCount,
@@ -114,7 +111,9 @@ begin
     Both of them allow you to see further, but in different ways
     (one of them sacrifices details, the other one increases mesh density).
   }
-  FTerrain.Size := GridCount * GridStep;
+  FTerrain.Size := Vector2(
+    GridCount * GridStep,
+    GridCount * GridStep);
 
   WritelnLog('Bounding box of terrain ' + FTerrain.BoundingBox.ToString);
 

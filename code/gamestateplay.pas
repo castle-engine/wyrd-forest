@@ -33,11 +33,13 @@ type
   { Play the game, instantiating terrain, trees, shooting targets and so on. }
   TStatePlay = class(TUIState)
   strict private
+    { Components designed using CGE editor, loaded from gamestatemain.castle-user-interface. }
+    MainViewport: TCastleViewport;
+    MainNavigation: TCastleWalkNavigation;
+
     Status: TCastleLabel;
     MyTerrain: TMyTerrain;
     Notifications: TCastleNotifications;
-    Viewport: TCastleViewport;
-    Navigation: TCastleWalkNavigation;
     TreeTemplate: TCastleScene;
     Trees: TCastleTransform;
     Enemies: TEnemies;
@@ -58,6 +60,7 @@ type
       out Enemy: TEnemy; out Point: TVector3; out Triangle: PTriangle): boolean;
   public
     InitialGridCount: Cardinal;
+    constructor Create(AOwner: TComponent); override;
     procedure Start; override;
     procedure Update(const SecondsPassed: Single;
       var HandleInput: boolean); override;
@@ -73,42 +76,35 @@ uses GameStateMainMenu, GameSpawned;
 
 { TStatePlay ----------------------------------------------------------------- }
 
+constructor TStatePlay.Create(AOwner: TComponent);
+begin
+  inherited;
+  DesignUrl := 'castle-data:/gamestateplay.castle-user-interface';
+end;
+
 procedure TStatePlay.Start;
-var
-  EnvironmentScene: TCastleScene;
 begin
   inherited;
 
-  Viewport := TCastleViewport.Create(FreeAtStop);
-  Viewport.FullSize := true;
-  InsertBack(Viewport);
-
-  Navigation := TCastleWalkNavigation.Create(FreeAtStop);
-  Navigation.PreferredHeight := 2;
-  Navigation.MoveSpeed := 10;
-  Viewport.InsertFront(Navigation);
-
-  EnvironmentScene := TCastleScene.Create(FreeAtStop);
-  EnvironmentScene.Load('castle-data:/environment/environment.x3dv');
-  EnvironmentScene.ProcessEvents := true;
-  Viewport.Items.Add(EnvironmentScene);
-  Viewport.Items.MainScene := EnvironmentScene;
+  { Find components, by name, that we need to access from code }
+  MainViewport := DesignedComponent('MainViewport') as TCastleViewport;
+  MainNavigation := DesignedComponent('MainNavigation') as TCastleWalkNavigation;
 
   Enemies := TEnemies.Create(FreeAtStop);
-  Enemies.Viewport := Viewport;
-  Enemies.Navigation := Navigation;
+  Enemies.Viewport := MainViewport;
+  Enemies.Navigation := MainNavigation;
   Enemies.OnHeightAboveTerrain := @HeightAboveTerrain;
   Enemies.Prepare;
-  Viewport.Items.Add(Enemies);
+  MainViewport.Items.Add(Enemies);
 
   TreeTemplate := TCastleScene.Create(FreeAtStop);
   TreeTemplate.Name := 'Tree'; // for nicer debugging
   TreeTemplate.Load('castle-data:/tree/oaktree_with_good_collisions.x3dv');
   { Prepare resources, to render faster when the game starts. }
-  Viewport.PrepareResources(TreeTemplate);
+  MainViewport.PrepareResources(TreeTemplate);
 
   Trees := TCastleTransform.Create(FreeAtStop);
-  Viewport.Items.Add(Trees);
+  MainViewport.Items.Add(Trees);
 
   Notifications := TCastleNotifications.Create(Owner);
   Notifications.Anchor(hpMiddle);
@@ -144,18 +140,18 @@ begin
   InsertFront(Crosshair);
 
   MyTerrain := TMyTerrain.Create(FreeAtStop);
-  MyTerrain.Viewport := Viewport;
+  MyTerrain.Viewport := MainViewport;
   MyTerrain.OnFixCamera := @FixCamera;
   MyTerrain.InitialGridCount := InitialGridCount;
   MyTerrain.Initialize;
 
-  Viewport.Camera.SetView(
+  MainViewport.Camera.SetView(
     { Initially, stand in the middle. }
-    Viewport.Items.BoundingBox.Center,
+    MainViewport.Items.BoundingBox.Center,
     Vector3(1, 0, 1),
     Vector3(0, 1, 0)
   );
-  FixCamera; // fix Viewport.WalkCamera.Position.Y
+  FixCamera; // fix MainViewport.WalkCamera.Position.Y
 end;
 
 function TStatePlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
@@ -163,7 +159,7 @@ var
   RayCollision: TRayCollision;
 begin
   Pos.Y := 1000 * 1000;
-  RayCollision := Viewport.Items.WorldRay(Pos, Vector3(0, -1, 0));
+  RayCollision := MainViewport.Items.WorldRay(Pos, Vector3(0, -1, 0));
   try
     Result :=
       (RayCollision <> nil) and
@@ -179,15 +175,15 @@ var
   P: TVector3;
   Y: Single;
 begin
-  P := Viewport.Camera.Translation;
+  P := MainViewport.Camera.Translation;
   if HeightAboveTerrain(P, Y) then
   begin
     P.Y := Y + 2;
-    Viewport.Camera.Translation := P;
+    MainViewport.Camera.Translation := P;
   end else
   begin
     WritelnLog('Camera stands outside of terrain, fixing');
-    Viewport.Camera.Translation := Viewport.Items.BoundingBox.Center;
+    MainViewport.Camera.Translation := MainViewport.Items.BoundingBox.Center;
     FixCamera;
   end;
 end;
@@ -199,14 +195,14 @@ var
 begin
   Result := false;
 
-  if Viewport.MouseRayHit <> nil then
+  if MainViewport.MouseRayHit <> nil then
   begin
-    EnemyIndex := Viewport.MouseRayHit.IndexOfItem(TEnemy);
+    EnemyIndex := MainViewport.MouseRayHit.IndexOfItem(TEnemy);
     if EnemyIndex <> -1 then
     begin
-      Enemy := Viewport.MouseRayHit[EnemyIndex].Item as TEnemy;
-      Point := Viewport.MouseRayHit[0].Point;
-      Triangle := Viewport.MouseRayHit[0].Triangle;
+      Enemy := MainViewport.MouseRayHit[EnemyIndex].Item as TEnemy;
+      Point := MainViewport.MouseRayHit[0].Point;
+      Triangle := MainViewport.MouseRayHit[0].Triangle;
       if Enemy.Idle and (Triangle <> nil) then
         Result := true;
     end;
@@ -240,7 +236,7 @@ begin
     '[F5] Screenshot' +NL+
     '[Escape] Back to main menu',
     [Container.Fps.ToString,
-     Navigation.MoveSpeed,
+     MainNavigation.MoveSpeed,
      HitUnderMouse]);
 end;
 
@@ -250,11 +246,11 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
   var
     ItemHit: TCastleTransform;
   begin
-    if Viewport.MouseRayHit = nil then
+    if MainViewport.MouseRayHit = nil then
       Notifications.Show('Nothing hit')
     else
     begin
-      ItemHit := Viewport.MouseRayHit[0].Item;
+      ItemHit := MainViewport.MouseRayHit[0].Item;
       Notifications.Show('Hit ' + ItemHit.Name + ' ' + ItemHit.ClassName);
     end;
   end;
@@ -280,10 +276,10 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Root := TX3DRootNode.Create;
     Root.AddChildren(Shape);
 
-    Scene := TCastleScene.Create(Viewport);
+    Scene := TCastleScene.Create(MainViewport);
     Scene.Load(Root, true);
 
-    Viewport.Camera.GetView(Pos, Dir, Up);
+    MainViewport.Camera.GetView(Pos, Dir, Up);
     Scene.Translation := Pos + Dir * 2;
     Scene.Direction := Dir;
 
@@ -297,7 +293,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Collider.Density := 100.0;
     Scene.RigidBody := Body;
 
-    Viewport.Items.Add(Scene);
+    MainViewport.Items.Add(Scene);
   end;
 
   function TrySpawnTree: boolean;
@@ -307,13 +303,13 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
   begin
     Result := false;
 
-    if (Viewport.MouseRayHit <> nil) and
-       (Viewport.MouseRayHit.Count >= 2) and
-       (Viewport.MouseRayHit[1].Item = MyTerrain.Terrain) then
+    if (MainViewport.MouseRayHit <> nil) and
+       (MainViewport.MouseRayHit.Count >= 2) and
+       (MainViewport.MouseRayHit[1].Item = MyTerrain.Terrain) then
     begin
       Result := true;
 
-      Pos := Viewport.MouseRayHit[0].Point;
+      Pos := MainViewport.MouseRayHit[0].Point;
       Tree := TSpawned.Create(Self);
       Tree.Spawn(TreeTemplate);
       Tree.Translation := Pos;
@@ -337,7 +333,7 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
     Result := EnemyUnderMouse(Enemy, Point, Triangle);
     if Result then
     begin
-      Enemy.Hit(Point, Triangle^, Viewport.Camera.Direction);
+      Enemy.Hit(Point, Triangle^, MainViewport.Camera.Direction);
 
       { advance tutorial }
       if TutorialState = tsShootEnemy then
@@ -374,8 +370,8 @@ begin
 
   if Event.IsKey(keyF4) then
   begin
-    Navigation.MouseLook := not Navigation.MouseLook;
-    Crosshair.Exists := Navigation.MouseLook;
+    MainNavigation.MouseLook := not MainNavigation.MouseLook;
+    Crosshair.Exists := MainNavigation.MouseLook;
     Result := true;
   end;
 

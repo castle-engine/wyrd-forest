@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2022 Michalis Kamburelis.
+  Copyright 2017-2023 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -13,15 +13,15 @@
   ----------------------------------------------------------------------------
 }
 
-{ TStatePlay, responsible for playing the game. }
-unit GameStatePlay;
+{ TViewPlay, responsible for playing the game. }
+unit GameViewPlay;
 
 interface
 
 uses SysUtils, Classes,
   CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
-  CastleUIControls, CastleTerrain, CastleUIState, CastleViewport,
+  CastleUIControls, CastleTerrain, CastleViewport,
   CastleCameras, X3DNodes, X3DFields, CastleRenderOptions,
   CastleTransform, CastleVectors, CastleTriangles, CastleTimeUtils,
   CastleUtils, CastleBoxes, CastleNotifications,
@@ -31,9 +31,9 @@ type
   TTutorialState = (tsShootEnemy, tsPlantTree, tsFinished);
 
   { Play the game, instantiating terrain, trees, shooting targets and so on. }
-  TStatePlay = class(TUIState)
+  TViewPlay = class(TCastleView)
   strict private
-    { Components designed using CGE editor, loaded from gamestatemain.castle-user-interface. }
+    { Components designed using CGE editor, loaded from gameviewmain.castle-user-interface. }
     MainViewport: TCastleViewport;
     MainNavigation: TCastleWalkNavigation;
 
@@ -68,21 +68,21 @@ type
   end;
 
 var
-  StatePlay: TStatePlay;
+  ViewPlay: TViewPlay;
 
 implementation
 
-uses GameStateMainMenu, GameSpawned;
+uses GameViewMainMenu, GameSpawned;
 
-{ TStatePlay ----------------------------------------------------------------- }
+{ TViewPlay ----------------------------------------------------------------- }
 
-constructor TStatePlay.Create(AOwner: TComponent);
+constructor TViewPlay.Create(AOwner: TComponent);
 begin
   inherited;
-  DesignUrl := 'castle-data:/gamestateplay.castle-user-interface';
+  DesignUrl := 'castle-data:/gameviewplay.castle-user-interface';
 end;
 
-procedure TStatePlay.Start;
+procedure TViewPlay.Start;
 begin
   inherited;
 
@@ -154,7 +154,7 @@ begin
   FixCamera; // fix MainViewport.WalkCamera.Position.Y
 end;
 
-function TStatePlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
+function TViewPlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
 var
   RayCollision: TRayCollision;
 begin
@@ -170,7 +170,7 @@ begin
   finally FreeAndNil(RayCollision) end;
 end;
 
-procedure TStatePlay.FixCamera;
+procedure TViewPlay.FixCamera;
 var
   P: TVector3;
   Y: Single;
@@ -188,7 +188,7 @@ begin
   end;
 end;
 
-function TStatePlay.EnemyUnderMouse(
+function TViewPlay.EnemyUnderMouse(
   out Enemy: TEnemy; out Point: TVector3; out Triangle: PTriangle): boolean;
 var
   EnemyIndex: Integer;
@@ -209,7 +209,7 @@ begin
   end;
 end;
 
-procedure TStatePlay.Update(const SecondsPassed: Single; var HandleInput: boolean);
+procedure TViewPlay.Update(const SecondsPassed: Single; var HandleInput: boolean);
 
   function HitUnderMouse: Cardinal;
   var
@@ -240,7 +240,7 @@ begin
      HitUnderMouse]);
 end;
 
-function TStatePlay.Press(const Event: TInputPressRelease): boolean;
+function TViewPlay.Press(const Event: TInputPressRelease): boolean;
 
   procedure HitNotification;
   var
@@ -257,43 +257,31 @@ function TStatePlay.Press(const Event: TInputPressRelease): boolean;
 
   procedure SpawnPhysicsBox;
   var
-    Box: TBoxNode;
-    Shape: TShapeNode;
-    Root: TX3DRootNode;
-    Scene: TCastleScene;
-    Body: TRigidBody;
-    Collider: TBoxCollider;
+    Box: TCastleBox;
+    Body: TCastleRigidBody;
+    Collider: TCastleBoxCollider;
     Pos, Dir, Up: TVector3;
-    Material: TMaterialNode;
   begin
-    Box := TBoxNode.CreateWithShape(Shape);
+    Box := TCastleBox.Create(MainViewport);
     Box.Size := Vector3(0.5, 0.5, 0.5);
-
-    Material := TMaterialNode.Create;
-    Material.DiffuseColor := Vector3(0.5, 0.5, 1.0);
-    Shape.Material := Material;
-
-    Root := TX3DRootNode.Create;
-    Root.AddChildren(Shape);
-
-    Scene := TCastleScene.Create(MainViewport);
-    Scene.Load(Root, true);
+    Box.Material := pmPhong;
+    Box.Color := Vector4(0.5, 0.5, 1.0, 1.0);
 
     MainViewport.Camera.GetView(Pos, Dir, Up);
-    Scene.Translation := Pos + Dir * 2;
-    Scene.Direction := Dir;
+    Box.Translation := Pos + Dir * 2;
+    Box.Direction := Dir;
 
-    Body := TRigidBody.Create(Self);
+    Body := TCastleRigidBody.Create(Self);
     Body.LinearVelocity := Dir * 4;
     Body.Dynamic := true;
+    Box.AddBehavior(Body);
 
-    Collider := TBoxCollider.Create(Body);
-    Collider.Size := Box.Size;
+    Collider := TCastleBoxCollider.Create(Self);
     Collider.Restitution := 0.3;
     Collider.Density := 100.0;
-    Scene.RigidBody := Body;
+    Box.AddBehavior(Collider);
 
-    MainViewport.Items.Add(Scene);
+    MainViewport.Items.Add(Box);
   end;
 
   function TrySpawnTree: boolean;
@@ -384,7 +372,7 @@ begin
 
   if Event.IsKey(keyEscape) then
   begin
-    TUIState.Current := StateMainMenu;
+    Container.View := ViewMainMenu;
     Result := true;
   end;
 end;

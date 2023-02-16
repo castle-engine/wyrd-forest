@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2022 Michalis Kamburelis.
+  Copyright 2017-2023 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -21,10 +21,10 @@ interface
 uses SysUtils, Classes,
   CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
-  CastleUIControls, CastleTerrain, CastleUIState, CastleViewport,
-  CastleCameras, X3DNodes, X3DFields, CastleRendererBaseTypes,
+  CastleUIControls, CastleTerrain, CastleViewport,
+  CastleCameras, X3DNodes, X3DFields, CastleRenderOptions,
   CastleTransform, CastleVectors, CastleTriangles, CastleRectangles,
-  CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications;
+  CastleUtils, CastleBoxes, CastleNotifications;
 
 type
   TFixCameraEvent = procedure of object;
@@ -48,26 +48,13 @@ uses Math;
 { TMyTerrain ------------------------------------------------------------------- }
 
 procedure TMyTerrain.Initialize;
-
-  function CreateRigidBody: TRigidBody;
-  var
-    Collider: TMeshCollider;
-  begin
-    Result := TRigidBody.Create(Self);
-    Result.Dynamic := false;
-
-    Collider := TMeshCollider.Create(Result);
-    { TODO: it's a hack to access internal TCastleScene under terrain this way,
-      better solution will come from new TCastleMeshCollider. }
-    Collider.Scene := FTerrain.Items[0] as TCastleScene;
-    Collider.Restitution := 0.3;
-  end;
-
 var
   TerrainNoise: TCastleTerrainNoise;
   GridCount: Cardinal;
   GridStep: Single;
   MoveLimit: TBox3D;
+  Body: TCastleRigidBody;
+  Collider: TCastleMeshCollider;
 begin
   TerrainNoise := TCastleTerrainNoise.Create(Self);
   TerrainNoise.Interpolation := niSpline; // slowest but best quality
@@ -93,6 +80,14 @@ begin
   FTerrain.Layer3.UvScale := 0.36;
   FTerrain.Layer4.UvScale := 0.36;
   FTerrain.Data := TerrainNoise;
+
+  Body := TCastleRigidBody.Create(Self);
+  FTerrain.AddBehavior(Body);
+
+  Collider := TCastleMeshCollider.Create(Self);
+  Collider.Mesh := FTerrain;
+  Collider.Restitution := 0.3;
+  FTerrain.AddBehavior(Collider);
 
   { User controls Size only implicitly, by GridCount,
     and controls explicitly GridStep.
@@ -125,9 +120,6 @@ begin
   MoveLimit := Viewport.Items.BoundingBox;
   MoveLimit.Max := MoveLimit.Max + Vector3(0, 1000, 0);
   Viewport.Items.MoveLimit := MoveLimit;
-
-  FTerrain.RigidBody.Free;
-  FTerrain.RigidBody := CreateRigidBody;
 end;
 
 end.

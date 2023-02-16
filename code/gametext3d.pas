@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2017 Michalis Kamburelis.
+  Copyright 2017-2023 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -48,7 +48,7 @@ begin
   inherited Create(AOwner);
 
   TextNode := TTextNode.Create;
-  TextNode.SetString([Text]);
+  TextNode.SetText([Text]);
 
   FontStyle := TFontStyleNode.Create;
   FontStyle.Justify := fjMiddle;

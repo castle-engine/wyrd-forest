@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2022 Michalis Kamburelis.
+  Copyright 2017-2023 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -109,8 +109,8 @@ var
   Side, DirectionToBreakApart: TVector3;
   Scene: TCastleScene;
   ClipEffect: TEffectNode;
-  Body: TRigidBody;
-  Collider: TBoxCollider;
+  Body: TCastleRigidBody;
+  Collider: TCastleBoxCollider;
 begin
   inherited Create(Enemy.World);
 
@@ -135,21 +135,21 @@ begin
   end;
 
   // set physics
-  Body := TRigidBody.Create(Self);
-  Body.Dynamic := true;
+  Body := TCastleRigidBody.Create(Scene);
+  // Body.Dynamic := true; // default already
   Body.LinearVelocity := DirectionToBreakApart * 5 + HitDirection * 7;
+  Scene.AddBehavior(Body);
 
-  Collider := TBoxCollider.Create(Body);
-  Collider.Size := Enemy.LocalBoundingBox.Size;
+  Collider := TCastleBoxCollider.Create(Scene);
   Collider.Restitution := 0.3;
   Collider.Density := 100.0;
+  Scene.AddBehavior(Collider);
 
   // necessary to make Collider centered around (0,0,0) work
   Scene.Translation := -Enemy.LocalBoundingBox.Center;
 
   Translation := Enemy.Translation + Enemy.LocalBoundingBox.Center;
   Rotation := Enemy.Rotation;
-  RigidBody := Body;
 
   Add(Scene);
 end;
@@ -296,7 +296,7 @@ begin
 
   EnemyIdleTemplate := TCastleScene.Create(Self);
   EnemyIdleTemplate.Name := 'EnemyIdle'; // for nicer debugging
-  EnemyIdleTemplate.Spatial := [ssStaticCollisions];
+  EnemyIdleTemplate.PreciseCollisions := true;
   EnemyIdleTemplate.Load('castle-data:/evil_squirrel/evil-squirrel-board_idle.x3d');
 
   EnemyDestroyedPartTemplate := TCastleScene.Create(Self);
@@ -357,7 +357,7 @@ procedure TEnemies.TryEnemySpawn;
   begin
     for I := 0 to SearchSpawnPositionTries - 1 do
     begin
-      Pos := Viewport.Camera.Position;
+      Pos := Viewport.Camera.Translation;
       Dir := Navigation.DirectionInGravityPlane;
       Side := TVector3.CrossProduct(Dir, Viewport.Camera.GravityUp);
 
@@ -383,7 +383,7 @@ begin
     Enemy.Translation := Pos;
 
     { make the enemy face player }
-    Dir := Viewport.Camera.Position - Pos;
+    Dir := Viewport.Camera.Translation - Pos;
     if not VectorsParallel(Dir, Viewport.Camera.GravityUp) then
     begin
       MakeVectorsOrthoOnTheirPlane(Dir, Viewport.Camera.GravityUp);

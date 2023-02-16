@@ -3,10 +3,12 @@
 
 # Output
 *.exe
+*.dll
 wyrd-forest
 docs/
 automatic-windows-resources.res
 *.log
+*.res
 
 # Build tool generated files
 castle-engine-output

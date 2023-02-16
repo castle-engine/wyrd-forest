@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2017 Michalis Kamburelis.
+  Copyright 2017-2023 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -13,17 +13,17 @@
   ----------------------------------------------------------------------------
 }
 
-{ TStateMainMenu, that asks player what terrain to load. }
-unit GameStateMainMenu;
+{ TViewMainMenu, that asks player what terrain to load. }
+unit GameViewMainMenu;
 
 interface
 
 uses Classes,
-  CastleControls, CastleUIState, CastleOnScreenMenu, CastleKeysMouse;
+  CastleControls, CastleUIControls, CastleKeysMouse;
 
 type
   { Ask player what terrain to load. }
-  TStateMainMenu = class(TUIState)
+  TViewMainMenu = class(TCastleView)
   strict private
     ImageBackground: TCastleImageControl;
     EditGridCount: TCastleEdit;
@@ -32,21 +32,22 @@ type
     procedure PlayClick(Sender: TObject);
   public
     procedure Start; override;
+    procedure Stop; override;
     function Press(const Event: TInputPressRelease): boolean; override;
   end;
 
 var
-  StateMainMenu: TStateMainMenu;
+  ViewMainMenu: TViewMainMenu;
 
 implementation
 
 uses SysUtils,
-  CastleColors, CastleUIControls, CastleFilesUtils, CastleUtils,
-  GameStatePlay, GameStateLoading;
+  CastleColors, CastleFilesUtils, CastleUtils,
+  GameViewPlay, GameViewLoading;
 
-{ TStateMainMenu ------------------------------------------------------------- }
+{ TViewMainMenu ------------------------------------------------------------- }
 
-procedure TStateMainMenu.Start;
+procedure TViewMainMenu.Start;
 begin
   inherited;
 
@@ -64,7 +65,6 @@ begin
   InsertFront(ImageBackground);
 
   EditGridCount := TCastleEdit.Create(FreeAtStop);
-  EditGridCount.CaptureAllInput := true;
   EditGridCount.AllowedChars := ['0'..'9'];
   EditGridCount.Width := 300;
   EditGridCount.MaxLength := 10;
@@ -74,7 +74,7 @@ begin
   InsertFront(EditGridCount);
 
   LabelGridCount := TCastleLabel.Create(FreeAtStop);
-  LabelGridCount.MaxWidth := StateContainer.UnscaledWidth - 20;
+  LabelGridCount.MaxWidth := Container.UnscaledWidth - 20;
   LabelGridCount.Anchor(hpLeft, 10);
   LabelGridCount.Anchor(vpBottom, 10 + EditGridCount.EffectiveHeight + 10);
   LabelGridCount.Color := White;
@@ -96,16 +96,23 @@ begin
   ButtonPlay.PaddingHorizontal := 40;
   ButtonPlay.PaddingVertical := ButtonPlay.PaddingHorizontal;
   InsertFront(ButtonPlay);
+
+  Container.ForceCaptureInput := EditGridCount;
 end;
 
-procedure TStateMainMenu.PlayClick(Sender: TObject);
+procedure TViewMainMenu.Stop;
 begin
-  StatePlay.InitialGridCount := StrToInt(EditGridCount.Text);
-  // TUIState.Current := StatePlay;
-  TUIState.Current := StateLoading; // StateLoading will switch to StatePlay
+  Container.ForceCaptureInput := nil;
+  inherited;
 end;
 
-function TStateMainMenu.Press(const Event: TInputPressRelease): boolean;
+procedure TViewMainMenu.PlayClick(Sender: TObject);
+begin
+  ViewPlay.InitialGridCount := StrToInt(EditGridCount.Text);
+  Container.View := ViewLoading; // ViewLoading will switch to ViewPlay
+end;
+
+function TViewMainMenu.Press(const Event: TInputPressRelease): boolean;
 begin
   Result := inherited;
   if Result then Exit;

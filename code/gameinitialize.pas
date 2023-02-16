@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2022 Michalis Kamburelis.
+  Copyright 2017-2023 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -23,14 +23,14 @@ implementation
 uses SysUtils, Classes,
   CastleWindow, CastleScene, CastleControls, CastleLog,
   CastleFilesUtils, CastleSceneCore, CastleKeysMouse, CastleColors,
-  CastleUIControls, CastleUIState, CastleViewport,
+  CastleUIControls, CastleViewport,
   CastleTransform, CastleVectors, CastleImages, CastleApplicationProperties,
-  CastleOnScreenMenu, CastleUtils, CastleBoxes, CastleNotifications
+  CastleUtils, CastleBoxes, CastleNotifications
   {$region 'Castle Initialization Uses'}
   // The content here may be automatically updated by CGE editor.
-  , GameStatePlay
-  , GameStateLoading
-  , GameStateMainMenu
+  , GameViewPlay
+  , GameViewLoading
+  , GameViewMainMenu
   {$endregion 'Castle Initialization Uses'};
 
 { application routines ------------------------------------------------------- }
@@ -48,16 +48,16 @@ begin
   Theme.ImagesPersistent[tiLabel].Url := 'castle-data:/gui/transparent_pixel.png';
   Theme.ImagesPersistent[tiLabel].ProtectedSides.AllSides := 0;
 
-  { Create game states and set initial state }
-  {$region 'Castle State Creation'}
+  { Create game views and set initial view }
+  {$region 'Castle View Creation'}
   // The content here may be automatically updated by CGE editor.
-  StateMainMenu := TStateMainMenu.Create(Application);
-  StatePlay := TStatePlay.Create(Application);
-  StateLoading := TStateLoading.Create(Application);
-  {$endregion 'Castle State Creation'}
+  ViewMainMenu := TViewMainMenu.Create(Application);
+  ViewPlay := TViewPlay.Create(Application);
+  ViewLoading := TViewLoading.Create(Application);
+  {$endregion 'Castle View Creation'}
 
-  { set current state }
-  TUIState.Current := StateMainMenu;
+  { set current view }
+  Window.Container.View := ViewMainMenu;
 end;
 
 initialization

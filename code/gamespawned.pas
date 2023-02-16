@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2017 Michalis Kamburelis.
+  Copyright 2017-2023 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -48,7 +48,7 @@ var
 begin
   Scene := SceneTemplate.Clone(Self);
   Scene.ProcessEvents := true;
-  Scene.Spatial := [ssRendering, ssDynamicCollisions];
+  Scene.PreciseCollisions := true;
   { Otherwise, the shape of the Scene before the animation plays may blink
     for a single frame. And our enemy and tree do not have the initial
     (before animation) frame equal to the 1st spawn frame. }

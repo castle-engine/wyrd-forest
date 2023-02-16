@@ -1,5 +1,5 @@
 {
-  Copyright 2017-2017 Michalis Kamburelis.
+  Copyright 2017-2023 Michalis Kamburelis.
 
   This file is part of "Wyrd Forest".
 
@@ -13,17 +13,17 @@
   ----------------------------------------------------------------------------
 }
 
-{ Game state showing loading screen. }
-unit GameStateLoading;
+{ Game view showing loading screen. }
+unit GameViewLoading;
 
 interface
 
-uses Classes, CastleControls, CastleKeysMouse, CastleUIState,
+uses Classes, CastleControls, CastleKeysMouse, CastleUIControls,
   CastleStringUtils, CastleGLImages;
 
 type
-  { Show loading screen and switch to StatePlay. }
-  TStateLoading = class(TUIState)
+  { Show loading screen and switch to ViewPlay. }
+  TViewLoading = class(TCastleView)
   private
     ImageBackground: TCastleImageControl;
     LabelLoading: TCastleLabel;
@@ -35,17 +35,17 @@ type
   end;
 
 var
-  StateLoading: TStateLoading;
+  ViewLoading: TViewLoading;
 
 implementation
 
 uses SysUtils,
-  CastleColors, CastleUIControls, CastleTimeUtils, CastleLog, CastleFilesUtils,
-  GameStatePlay;
+  CastleColors, CastleTimeUtils, CastleLog, CastleFilesUtils,
+  GameViewPlay;
 
-{ TStateLoading ----------------------------------------------------------------- }
+{ TViewLoading ----------------------------------------------------------------- }
 
-procedure TStateLoading.Start;
+procedure TViewLoading.Start;
 begin
   inherited;
 
@@ -74,16 +74,16 @@ begin
   RenderDone := false;
 end;
 
-procedure TStateLoading.Update(const SecondsPassed: Single; var HandleInput: boolean);
+procedure TViewLoading.Update(const SecondsPassed: Single; var HandleInput: boolean);
 begin
   inherited;
   if RenderDone then
-    { show loading screen, then go to StatePlay.
-      The actual loading will happen in StatePlay.Start, but with our background. }
-    TUIState.Current := StatePlay;
+    { show loading screen, then go to ViewPlay.
+      The actual loading will happen in ViewPlay.Start, but with our background. }
+    Container.View := ViewPlay;
 end;
 
-procedure TStateLoading.Render;
+procedure TViewLoading.Render;
 begin
   inherited;
   RenderDone := true;

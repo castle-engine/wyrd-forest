@@ -29,6 +29,7 @@ type
     EditGridCount: TCastleEdit;
     LabelGridCount: TCastleLabel;
     ButtonPlay: TCastleButton;
+    RectGridCount: TCastleRectangleControl;
     procedure PlayClick(Sender: TObject);
   public
     procedure Start; override;
@@ -42,7 +43,7 @@ var
 implementation
 
 uses SysUtils,
-  CastleColors, CastleFilesUtils, CastleUtils,
+  CastleColors, CastleFilesUtils, CastleUtils, CastleVectors,
   GameViewPlay, GameViewLoading;
 
 { TViewMainMenu ------------------------------------------------------------- }
@@ -73,19 +74,25 @@ begin
   EditGridCount.Anchor(vpBottom, 10);
   InsertFront(EditGridCount);
 
+  RectGridCount := TCastleRectangleControl.Create(FreeAtStop);
+  RectGridCount.AutoSizeToChildren := true;
+  RectGridCount.Color := Vector4(0, 0, 0, 0.5);
+  RectGridCount.Anchor(hpLeft, 10);
+  RectGridCount.Anchor(vpBottom, 10 + EditGridCount.EffectiveHeight + 10);
+  InsertFront(RectGridCount);
+
   LabelGridCount := TCastleLabel.Create(FreeAtStop);
   LabelGridCount.MaxWidth := Container.UnscaledWidth - 20;
-  LabelGridCount.Anchor(hpLeft, 10);
-  LabelGridCount.Anchor(vpBottom, 10 + EditGridCount.EffectiveHeight + 10);
+  LabelGridCount.Anchor(hpMiddle);
+  LabelGridCount.Anchor(vpMiddle);
   LabelGridCount.Color := White;
-  LabelGridCount.Frame := true;
   LabelGridCount.Padding := 10;
   LabelGridCount.Caption := 'Initial Grid Count.' + NL +
     'The terrain mesh size is (Grid Count) * (Grid Count).' + NL +
     '- 50-100 is good for experimenting with terrain noise parameters.' + NL +
     '- 500 is good for actualy playing.' + NL +
     '- 1000 is great for playing, it is large (and still plays very fast), but loading takes a while now (~50 secs).';
-  InsertFront(LabelGridCount);
+  RectGridCount.InsertFront(LabelGridCount);
 
   ButtonPlay := TCastleButton.Create(FreeAtStop);
   ButtonPlay.Caption := 'PLAY';

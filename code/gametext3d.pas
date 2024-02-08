@@ -43,6 +43,7 @@ var
   TextNode: TTextNode;
   FontStyle: TFontStyleNode;
   Shape: TShapeNode;
+  Appearance: TAppearanceNode;
   Root: TX3DRootNode;
 begin
   inherited Create(AOwner);
@@ -60,9 +61,12 @@ begin
   Material := TUnlitMaterialNode.Create;
   Material.EmissiveColor := YellowRGB;
 
+  Appearance := TAppearanceNode.Create;
+  Appearance.Material := Material;
+
   Shape := TShapeNode.Create;
   Shape.Geometry := TextNode;
-  Shape.Material := Material;
+  Shape.Appearance := Appearance;
 
   Billboard := TBillboardNode.Create;
   Billboard.AddChildren(Shape);

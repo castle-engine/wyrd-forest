@@ -28,6 +28,7 @@ type
     ImageBackground: TCastleImageControl;
     LabelLoading: TCastleLabel;
     RenderDone: boolean;
+    RectLoading: TCastleRectangleControl;
   public
     procedure Start; override;
     procedure Update(const SecondsPassed: Single; var HandleInput: boolean); override;
@@ -40,7 +41,7 @@ var
 implementation
 
 uses SysUtils,
-  CastleColors, CastleTimeUtils, CastleLog, CastleFilesUtils,
+  CastleColors, CastleTimeUtils, CastleLog, CastleFilesUtils, CastleVectors,
   GameViewPlay;
 
 { TViewLoading ----------------------------------------------------------------- }
@@ -62,14 +63,20 @@ begin
   ImageBackground.Anchor(vpMiddle);
   InsertFront(ImageBackground);
 
+  RectLoading := TCastleRectangleControl.Create(FreeAtStop);
+  RectLoading.AutoSizeToChildren := true;
+  RectLoading.Color := Vector4(0, 0, 0, 0.5);
+  RectLoading.Anchor(hpMiddle);
+  RectLoading.Anchor(vpMiddle);
+  InsertFront(RectLoading);
+
   LabelLoading := TCastleLabel.Create(FreeAtStop);
   LabelLoading.Anchor(hpMiddle);
   LabelLoading.Anchor(vpMiddle);
   LabelLoading.Color := White;
-  LabelLoading.Frame := true;
   LabelLoading.Padding := 20;
   LabelLoading.Caption := 'Loading';
-  InsertFront(LabelLoading);
+  RectLoading.InsertFront(LabelLoading);
 
   RenderDone := false;
 end;

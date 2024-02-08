@@ -45,6 +45,7 @@ type
     Enemies: TEnemies;
     Crosshair: TCastleCrosshair;
     TutorialLabel: TCastleLabel;
+    RectTutorial: TCastleRectangleControl;
     TutorialState: TTutorialState;
 
     { Height (Y) at the given Position of the terrain.
@@ -120,18 +121,24 @@ begin
   Status.Color := Yellow; // you could use "Vector4(1, 1, 0, 1)" instead of Yellow
   InsertFront(Status);
 
+  RectTutorial := TCastleRectangleControl.Create(FreeAtStop);
+  RectTutorial.AutoSizeToChildren := true;
+  RectTutorial.Color := Vector4(0, 0, 0, 0.5);
+  RectTutorial.Anchor(hpMiddle);
+  RectTutorial.Anchor(vpMiddle);
+  InsertFront(RectTutorial);
+
   TutorialLabel := TCastleLabel.Create(FreeAtStop);
   TutorialLabel.Anchor(hpMiddle);
   TutorialLabel.Anchor(vpMiddle);
   TutorialLabel.FontSize := 30;
   TutorialLabel.Color := White;
-  TutorialLabel.Frame := true;
   TutorialLabel.Padding := 20;
   TutorialLabel.Caption :=
     'Move with [AWSD] keys.' + NL +
     'Toggle mouse look with [F4].' + NL +
     'Press [left mouse button] to shoot the evil squirrel.';
-  InsertFront(TutorialLabel);
+  RectTutorial.InsertFront(TutorialLabel);
 
   TutorialState := tsShootEnemy;
 
@@ -306,7 +313,7 @@ function TViewPlay.Press(const Event: TInputPressRelease): boolean;
       { advance tutorial }
       if TutorialState = tsPlantTree then
       begin
-        TutorialLabel.Exists := false;
+        RectTutorial.Exists := false;
         Inc(TutorialState);
       end;
     end;

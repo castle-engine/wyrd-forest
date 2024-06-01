@@ -110,7 +110,7 @@ var
   Scene: TCastleScene;
   ClipEffect: TEffectNode;
   Body: TCastleRigidBody;
-  Collider: TCastleBoxCollider;
+  Col: TCastleBoxCollider;
 begin
   inherited Create(Enemy.World);
 
@@ -140,10 +140,10 @@ begin
   Body.LinearVelocity := DirectionToBreakApart * 5 + HitDirection * 7;
   Scene.AddBehavior(Body);
 
-  Collider := TCastleBoxCollider.Create(Scene);
-  Collider.Restitution := 0.3;
-  Collider.Density := 100.0;
-  Scene.AddBehavior(Collider);
+  Col := TCastleBoxCollider.Create(Scene);
+  Col.Restitution := 0.3;
+  Col.Density := 100.0;
+  Scene.AddBehavior(Col);
 
   // necessary to make Collider centered around (0,0,0) work
   Scene.Translation := -Enemy.LocalBoundingBox.Center;

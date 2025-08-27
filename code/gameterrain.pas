@@ -27,7 +27,7 @@ uses SysUtils, Classes,
   CastleUtils, CastleBoxes, CastleNotifications;
 
 type
-  TFixCameraEvent = procedure of object;
+  TFixCameraEvent = procedure (const OverVoidMoveToCenter: Boolean) of object;
 
   { Display and edit a terrain. }
   TMyTerrain = class(TComponent)
@@ -114,7 +114,7 @@ begin
 
   Viewport.Items.Add(FTerrain);
 
-  OnFixCamera;
+  OnFixCamera(true);
 
   // make gravity work even if your position is over the world bbox
   MoveLimit := Viewport.Items.BoundingBox;

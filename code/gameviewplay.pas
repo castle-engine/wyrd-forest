@@ -53,8 +53,18 @@ type
       Returns @false is this is not over terrain (maybe outside terrain,
       maybe over another tree or enemy). }
     function HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
-    { Fix Viewport camera position to stand on ground }
-    procedure FixCamera;
+    { Fix Viewport camera position to stand on ground.
+
+      @param(OverVoidMoveToCenter
+        Behavior when FixCamera detects we are over a void
+        (so we cannot fix position to stand on ground by merely
+        changing camera Y, we need to change XZ).
+        If @true, we will move the camera to MainViewport.Items.BoundingBox.Center
+        and then fix Y again.
+        If @false, we will make an error.
+      )
+     }
+    procedure FixCamera(const OverVoidMoveToCenter: Boolean);
     { Determine Enemy and exact hit point and triangle,
       looking at Viewport.MouseRayHit. }
     function EnemyUnderMouse(
@@ -158,26 +168,49 @@ begin
     Vector3(1, 0, 1),
     Vector3(0, 1, 0)
   );
-  FixCamera; // fix MainViewport.WalkCamera.Position.Y
+  FixCamera(true); // fix MainViewport.WalkCamera.Position.Y
 end;
 
 function TViewPlay.HeightAboveTerrain(Pos: TVector3; out Y: Single): boolean;
 var
   RayCollision: TRayCollision;
+  RayCollisionInfo: TRayCollisionNode;
 begin
-  Pos.Y := 1000 * 1000;
+  { Note: Don't go too crazy with this value,
+    1000 * 1000 would be too impresive and would not hit default small
+    in our tests. }
+  Pos.Y := 10 * 1000;
   RayCollision := MainViewport.Items.WorldRay(Pos, Vector3(0, -1, 0));
   try
     Result :=
       (RayCollision <> nil) and
-      (RayCollision.Count >= 2) and
-      (RayCollision[1].Item = MyTerrain.Terrain);
+      RayCollision.Info(RayCollisionInfo) and
+      (RayCollisionInfo.Item = MyTerrain.Terrain);
     if Result then
-      Y := RayCollision[0].Point.Y;
+      Y := RayCollisionInfo.Point.Y;
+    {.$define DEBUG_HEIGHT_ABOVE_TERRAIN}
+    {$ifdef DEBUG_HEIGHT_ABOVE_TERRAIN}
+    if not Result then
+    begin
+      WritelnLog('HeightAboveTerrain: no terrain under %s.', [Pos.ToString]);
+      WritelnLog('HeightAboveTerrain: RayCollision <> nil: %s.', [BoolToStr(RayCollision <> nil, true)]);
+      if RayCollision <> nil then
+      begin
+        WritelnLog('HeightAboveTerrain: RayCollision.Info(RayCollisionInfo): %s.', [BoolToStr(RayCollision.Info(RayCollisionInfo), true)]);
+        if RayCollision.Info(RayCollisionInfo) then
+        begin
+          WritelnLog('HeightAboveTerrain: RayCollisionInfo.Item <> nil: %s.', [BoolToStr(RayCollisionInfo.Item <> nil, true)]);
+          if RayCollisionInfo.Item <> nil then
+            WritelnLog('HeightAboveTerrain: RayCollisionInfo.Item.Name: %s.', [RayCollisionInfo.Item.Name]);
+          WritelnLog('HeightAboveTerrain: RayCollisionInfo.Point: %s.', [RayCollisionInfo.Point.ToString]);
+        end;
+      end;
+    end;
+    {$endif}
   finally FreeAndNil(RayCollision) end;
 end;
 
-procedure TViewPlay.FixCamera;
+procedure TViewPlay.FixCamera(const OverVoidMoveToCenter: Boolean);
 var
   P: TVector3;
   Y: Single;
@@ -188,11 +221,17 @@ begin
     P.Y := Y + 2;
     MainViewport.Camera.Translation := P;
   end else
+  if OverVoidMoveToCenter then
   begin
     WritelnLog('Camera stands outside of terrain, fixing');
     MainViewport.Camera.Translation := MainViewport.Items.BoundingBox.Center;
-    FixCamera;
-  end;
+    // passing here false avoids infinite recursion loop,
+    // in case collision detection would fail for some unrelated reason.
+    FixCamera(false);
+  end else
+    raise Exception.CreateFmt('Cannot fix camera, position %s is outside of terrain, and OverVoidMoveToCenter = false', [
+      MainViewport.Camera.Translation.ToString
+    ]);
 end;
 
 function TViewPlay.EnemyUnderMouse(

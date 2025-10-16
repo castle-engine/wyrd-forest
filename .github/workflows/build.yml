@@ -77,10 +77,12 @@ jobs:
 
   # Build for platforms supported from macOS.
   # This means to build for macOS and (maybe in the future) iOS.
-  # Using macos-15-intel runner, as last Intel-based macOS runner.
   build-macos:
     name: Build Using macOS
-    runs-on: macos-15-intel
+    strategy:
+      matrix:
+        os: [macos-15-intel, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
       - name: Install FPC
@@ -96,12 +98,13 @@ jobs:
         run: cd $CASTLE_ENGINE_PATH/tools/build-tool/ && ./castle-engine_compile.sh
 
       - name: Package macOS
-        run: castle-engine package --os=darwin --cpu=x86_64 --verbose
+        # do not specify --os=darwin --cpu=x86_64/aarch64, let it use default
+        run: castle-engine package --verbose
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: "*-darwin-x86_64.zip"
+          path: "*-darwin-*.zip"
           if-no-files-found: error
 
   release:

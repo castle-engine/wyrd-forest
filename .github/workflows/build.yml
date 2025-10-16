@@ -93,7 +93,7 @@ jobs:
       - name: Castle Game Engine - Env PATH (non-Windows)
         run: echo "PATH=$PATH:$CASTLE_ENGINE_PATH/tools/build-tool/" >> $GITHUB_ENV
       - name: Castle Game Engine - Clone snapshot
-        run: git clone --depth 1 --single-branch --branch snapshot https://github.com/castle-engine/castle-engine/
+        run: git clone --depth 1 --single-branch --branch master https://github.com/castle-engine/castle-engine/
       - name: Castle Game Engine - Build
         run: cd $CASTLE_ENGINE_PATH/tools/build-tool/ && ./castle-engine_compile.sh
 
